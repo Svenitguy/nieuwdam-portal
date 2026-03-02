@@ -1,0 +1,20 @@
+[
+  {
+    "FirstName": "<FirstName>",
+    "LastName": "<LastName>",
+    "DisplayName": "<DisplayName>",
+    "JobTitle": "<JobTitle>",
+    "Department": "<Department>",
+    "UserName": "<UserName@yourdomain.onmicrosoft.com>",
+    "EmployeeId": "1002"
+  },
+  {
+    "FirstName": "<FirstName>",
+    "LastName": "<LastName>",
+    "DisplayName": "<DisplayName>",
+    "JobTitle": "<JobTitle>",
+    "Department": "<Department>",
+    "UserName": "<UserName@yourdomain.onmicrosoft.com>",
+    "EmployeeId": "1003"
+  }
+]
