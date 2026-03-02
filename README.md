@@ -16,7 +16,7 @@ Dit project is opgezet om aan te tonen dat ik in staat ben om:
 - Governance en kostenbeheer op te zetten  
 - Microsoft 365 en clouddiensten te beheren  
 
-Dit is geen tutorial, maar een gestructureerde case study die de opzet van een cloudomgeving simuleert.
+> Dit is geen tutorial, maar een gestructureerde case study die de opzet van een cloudomgeving simuleert.
 
 ---
 
@@ -43,6 +43,7 @@ Een aparte Azure tenant werd opgezet:
 
 `nieuwdam.onmicrosoft.com`
 
+
 Deze tenant is geïsoleerd van mijn professionele tenant om een realistische organisatorische scheiding na te bootsen.
 
 ---
@@ -51,22 +52,13 @@ Deze tenant is geïsoleerd van mijn professionele tenant om een realistische org
 
 ### Gebruikers
 
-Gebruikers werden provisioned via PowerShell scripts:
-
-- IT Administrator  
-- IT Support  
-- HR Officer  
-- Financial Officer  
-- Administrative Staff  
-- Police Administration  
-- Externe guest user  
-
-### Automatisering
+Gebruikers worden provisioned via PowerShell scripts en JSON-configuratiebestanden:
 
 - Bulk user provisioning via Microsoft Graph PowerShell  
 - Reproduceerbare en schaalbare gebruikersbeheerprocessen  
+- Idempotent: bestaande gebruikers worden overgeslagen  
 
-### Role-Based Access Control
+### Security Groups & Role-Based Access Control
 
 - Security groups gebruikt i.p.v. individuele gebruikersrechten  
 - Voorbeelden van groepen:  
@@ -77,7 +69,7 @@ Gebruikers werden provisioned via PowerShell scripts:
   - SG_Administration  
   - SG_Police  
 
-Dit volgt best practices van enterprise RBAC.
+> Volgt best practices van enterprise RBAC.
 
 ---
 
@@ -102,15 +94,15 @@ Dit volgt best practices van enterprise RBAC.
 
 ## PowerShell Automatisering
 
-PowerShell werd gebruikt om:
+PowerShell scripts worden gebruikt om:
 
 - Verbinding te maken met Microsoft Graph  
-- Gebruikers aan te maken  
-- Gebruikers aan security groups toe te wijzen  
+- Gebruikers aan te maken vanuit JSON-configuratie  
+- Groepen aan te maken en gebruikers eraan toe te wijzen  
 - Schaalbare deployment van identiteitsbeheer te simuleren  
 
 Scripts zijn opgeslagen in de `/scripts` map.  
-Specifiek kan het script [create-users.ps1](https://github.com/Svenitguy/nieuwdam-portal/blob/main/scripts/create-users.ps1) geraadpleegd worden voor bulk user provisioning.  
+Specifiek kan het script [01-create-users.ps1](https://github.com/Svenitguy/nieuwdam-portal/blob/main/scripts/01-create-users.ps1) geraadpleegd worden voor bulk user provisioning.  
 Bekijk de volledige lijst van scripts in de [scripts-map](https://github.com/Svenitguy/nieuwdam-portal/tree/main/scripts).
 
 ---
@@ -121,6 +113,9 @@ De repo is georganiseerd als volgt:
 
 - `/assets` – Afbeeldingen, screenshots, diagrammen  
 - `/azure` – Azure-gerelateerde resources, scripts en configuratiebestanden  
+- `/config` – JSON configuratiebestanden voor gebruikers, groepen, enz.  
 - `/docs` – Documentatie over projecten en cloud setup  
 - `/projects` – Specifieke projectpagina’s zoals portfolio, quiz, games  
-- `/scripts` – PowerShell scripts voor gebruikers, groepen, provisioning en automatisering
+- `/scripts` – PowerShell scripts voor gebruikers, groepen, provisioning en automatisering  
+
+> Met deze structuur kan het project makkelijk onderhouden en uitgebreid worden. Het toont hands-on ervaring zoals in een echte professionele IT-omgeving.
