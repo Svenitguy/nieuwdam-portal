@@ -1,0 +1,171 @@
+# ==================================================
+# Nieuwdam Cloud Platform - Git Ignore
+# ==================================================
+
+
+# ==================================================
+# Secrets & Credentials
+# ==================================================
+
+*.secret
+*.key
+*.pem
+*.pfx
+*.cer
+*.p12
+
+.env
+.env.*
+
+
+# ==================================================
+# Configuration Data
+# ==================================================
+
+# Ignore all configuration files
+config/*.json
+
+# Keep example configurations
+!config/examples/
+!config/examples/*.json
+
+
+# ==================================================
+# Identity Platform (Local Development Only)
+# ==================================================
+
+# Complete local identity generation workspace
+Identity-Platform/
+
+
+# ==================================================
+# Runtime Data
+# ==================================================
+
+logs/
+reports/
+state/
+
+
+# ==================================================
+# Generated Data
+# ==================================================
+
+# Generated exports
+reports/*.csv
+reports/*.html
+reports/*.pdf
+
+# Temporary exports
+*.json.tmp
+
+
+# ==================================================
+# Python
+# ==================================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+
+# ==================================================
+# Terraform
+# ==================================================
+
+# Terraform working directory
+.terraform/
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+
+terraform.tfstate.d/
+
+# Terraform variables containing secrets
+*.tfvars
+*.tfvars.json
+
+# Terraform crash logs
+crash.log
+
+# Terraform overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+
+# ==================================================
+# Azure Local Files
+# ==================================================
+
+.azure/
+
+
+# ==================================================
+# PowerShell
+# ==================================================
+
+*.log
+*.bak
+*.backup
+
+
+# ==================================================
+# Editor Configuration
+# ==================================================
+
+.vscode/
+.idea/
+
+
+# ==================================================
+# Operating System Files
+# ==================================================
+
+.DS_Store
+Thumbs.db
+
+
+# ==================================================
+# Temporary Files
+# ==================================================
+
+*.tmp
+*.temp
+*.cache
+
+
+# ==================================================
+# Build Artifacts
+# ==================================================
+
+dist/
+build/
+bin/
+obj/
+
+# =========================
+# Documentation drafts
+# =========================
+
+docs/01-project-overview.md
+docs/architecture.md
+docs/deployment-guide.md
+docs/security-design.md
+
+# =========================
+# Local maintenance scripts
+# =========================
+
+scripts/rollback-newdam.ps1

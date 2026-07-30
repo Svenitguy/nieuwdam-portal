@@ -1,0 +1,722 @@
+﻿<!DOCTYPE html>
+
+<html lang="nl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Nieuwdam Validation Dashboard
+    </title>
+
+
+    <link rel="stylesheet" href="validation.css">
+    <link rel="icon" href="data:,">
+
+</head>
+
+<body>
+
+    <div class="page">
+
+        <!-- ======================================================
+     HEADER
+====================================================== -->
+
+        <header class="hero">
+
+            <div class="hero-left">
+
+
+                <h1>
+                    Nieuwdam Validation Dashboard
+                </h1>
+
+
+                <p class="subtitle">
+                    Microsoft Entra ID Validation Report
+                </p>
+
+                <p class="run-id">
+                    Run ID:
+                    <span id="runId">
+                        -
+                    </span>
+                </p>
+
+            </div>
+
+
+
+            <div class="hero-right">
+
+
+                <button id="themeButton">
+
+                    🌙 Dark Mode
+
+                </button>
+
+
+            </div>
+
+        </header>
+
+        <!-- ======================================================
+     TENANT INFORMATION
+====================================================== -->
+
+        <section class="tenant-panel">
+
+            <div class="tenant-item">
+
+                <span class="label">
+                    Tenant
+                </span>
+
+
+                <span class="value" id="tenantName">
+
+                    Nieuwdam
+
+                </span>
+
+
+            </div>
+
+
+
+            <div class="tenant-item">
+
+                <span class="label">
+                    Generated
+                </span>
+
+
+                <span class="value" id="generatedDate">
+
+                    -
+
+                </span>
+
+
+            </div>
+
+
+
+            <div class="tenant-item">
+
+
+                <span class="label">
+                    Version
+                </span>
+
+
+                <span class="value" id="scriptVersion">
+
+                    5.0
+
+                </span>
+
+
+            </div>
+
+
+
+            <div class="tenant-item">
+
+
+                <span class="label">
+                    Environment
+                </span>
+
+
+                <span class="value">
+
+                    Microsoft Graph
+
+                </span>
+
+
+            </div>
+
+        </section>
+
+        <main>
+
+            <!-- ======================================================
+     DASHBOARD CARDS
+====================================================== -->
+
+            <section class="dashboard">
+
+                <div class="card total">
+
+
+                    <div class="card-icon">
+                        📊
+                    </div>
+
+
+                    <div class="card-title">
+                        Total Checks
+                    </div>
+
+
+                    <div id="totalChecks" class="card-value">
+
+                        0
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+                <div class="card pass">
+
+
+                    <div class="card-icon">
+                        ✔
+                    </div>
+
+
+                    <div class="card-title">
+                        Passed
+                    </div>
+
+
+                    <div id="passedChecks" class="card-value">
+
+                        0
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+                <div class="card fail">
+
+
+                    <div class="card-icon">
+                        ✖
+                    </div>
+
+
+                    <div class="card-title">
+                        Failed
+                    </div>
+
+
+                    <div id="failedChecks" class="card-value">
+
+                        0
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+                <div class="card success">
+
+
+                    <div class="card-icon">
+                        🎯
+                    </div>
+
+
+                    <div class="card-title">
+                        Success Rate
+                    </div>
+
+
+                    <div id="successRate" class="card-value">
+
+                        0%
+
+                    </div>
+
+
+                </div>
+
+            </section>
+
+            <!-- ======================================================
+     PROGRESS
+====================================================== -->
+
+            <section class="progress-panel">
+
+                <div class="progress-header">
+
+                    Validation Progress
+
+                </div>
+
+
+
+                <div class="progress">
+
+
+                    <div id="progressBar" class="progress-fill">
+
+                    </div>
+
+
+                </div>
+
+                <div id="progressPercentage" class="progress-percentage">
+                    0%
+                </div>
+
+            </section>
+
+            <!-- ======================================================
+     SUMMARY
+====================================================== -->
+
+            <section class="summary-grid">
+
+                <div class="summary-card">
+
+
+                    <h3>
+                        Validation Summary
+                    </h3>
+
+
+                    <div id="summary">
+
+                        Loading...
+
+                    </div>
+
+
+                </div>
+
+
+
+
+
+                <div class="summary-card">
+
+
+                    <h3>
+                        Recent Failures
+                    </h3>
+
+
+                    <div id="recentFailures">
+
+                        None
+
+                    </div>
+
+
+                </div>
+
+            </section>
+
+            <!-- ======================================================
+     SEARCH AND FILTER CONTROLS
+====================================================== -->
+
+            <section class="controls">
+
+                <div class="control-item">
+
+
+                    <label for="search">
+
+                        Search
+
+                    </label>
+
+
+                    <input type="text" id="search" placeholder="Search validation results...">
+
+
+                </div>
+
+
+
+
+
+                <div class="control-item">
+
+
+                    <label for="statusFilter">
+
+                        Status
+
+                    </label>
+
+
+                    <select id="statusFilter">
+
+
+                        <option value="ALL">
+
+                            All statuses
+
+                        </option>
+
+
+                        <option value="PASS">
+
+                            PASS
+
+                        </option>
+
+
+                        <option value="FAIL">
+
+                            FAIL
+
+                        </option>
+
+
+                        <option value="WARNING">
+
+                            WARNING
+
+                        </option>
+
+
+                    </select>
+
+
+                </div>
+
+            </section>
+
+            <!-- ======================================================
+     TABLE HEADER
+====================================================== -->
+
+            <div class="table-header">
+
+                <div class="table-info">
+
+
+                    <span id="resultCount">
+
+                        0 results
+
+                    </span>
+
+
+                </div>
+
+
+
+
+
+                <div class="page-size-control">
+
+
+                    <label for="pageSize">
+
+                        Show
+
+                    </label>
+
+
+
+                    <select id="pageSize">
+
+
+                        <option value="25">
+
+                            25
+
+                        </option>
+
+
+                        <option value="50">
+
+                            50
+
+                        </option>
+
+
+                        <option value="100">
+
+                            100
+
+                        </option>
+
+
+                        <option value="ALL">
+
+                            All
+
+                        </option>
+
+
+                    </select>
+
+
+
+                    <span>
+
+                        per page
+
+                    </span>
+
+
+                </div>
+
+            </div>
+
+            <!-- ======================================================
+     VALIDATION TABLE
+====================================================== -->
+
+            <div class="table-container">
+
+                <table id="validationTable">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+
+
+                                Type
+
+
+                            </th>
+
+                            <th>
+
+
+                                Object
+
+
+                            </th>
+
+                            <th>
+
+
+                                Controle
+
+
+                            </th>
+
+                            <th>
+
+
+                                Status
+
+
+                            </th>
+
+                            <th>
+
+
+                                Expected
+
+
+                            </th>
+
+                            <th>
+
+
+                                Actual
+
+
+                            </th>
+
+                            <th>
+
+
+                                Message
+
+
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="results">
+
+                        <!-- JavaScript vult deze tabel automatisch -->
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <!-- ======================================================
+     PAGINATION
+====================================================== -->
+
+            <div class="pagination">
+
+                <button id="previousPage">
+
+
+                    Previous
+
+
+                </button>
+
+
+
+
+
+                <span id="pageInfo">
+
+
+                    Page 1/1
+
+
+                </span>
+
+
+
+
+
+                <button id="nextPage">
+
+
+                    Next
+
+
+                </button>
+
+
+            </div>
+
+            <!-- ======================================================
+     FOOTER
+====================================================== -->
+
+        </main>
+
+    </div>
+
+    <footer>
+
+        <div class="footer-left">
+
+
+            Nieuwdam Validation Framework
+
+
+        </div>
+
+
+
+
+        <div class="footer-right">
+
+
+            Generated with PowerShell & Microsoft Graph
+
+
+        </div>
+
+    </footer>
+
+    <!-- ======================================================
+     POWER SHELL INJECTION VARIABLES
+====================================================== -->
+
+    <script>
+
+
+        /*
+            Deze waarden worden automatisch
+            vervangen door Reporting.psm1
+        */
+
+
+        const reportFile = "{{JSON_FILE}}";
+
+
+
+        const reportInfo = {
+
+
+            runId:
+
+                "{{RUN_ID}}",
+
+            tenant:
+
+                "{{TENANT_NAME}}",
+
+
+
+            tenantId:
+
+                "{{TENANT_ID}}",
+
+
+
+            generated:
+
+                "{{GENERATED}}",
+
+
+
+            scriptVersion:
+
+                "{{VERSION}}"
+
+
+
+        };
+
+
+
+
+        /*
+            Veiligheidscontrole
+        */
+
+
+        if (
+            reportFile.includes("{{")
+        ) {
+
+
+            console.warn(
+                "reportFile placeholder was not replaced by PowerShell"
+            );
+
+
+        }
+
+
+
+    </script>
+
+    <!-- ======================================================
+     DASHBOARD ENGINE
+====================================================== -->
+
+    <script src="validation.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,2085 @@
+/* ==========================================================
+   Nieuwdam Validation Dashboard
+   Microsoft Fluent UI Style v5.0
+========================================================== */
+
+
+/* ==========================================================
+   VARIABLES
+========================================================== */
+
+
+:root {
+
+
+    --background:
+        #f3f2f1;
+
+
+    --surface:
+        #ffffff;
+
+
+    --surface-hover:
+        #faf9f8;
+
+
+    --primary:
+        #0078d4;
+
+
+    --primary-dark:
+        #106ebe;
+
+
+    --border:
+        #edebe9;
+
+
+    --text:
+        #323130;
+
+
+    --text-light:
+        #605e5c;
+
+
+    --success:
+        #107c10;
+
+
+    --success-bg:
+        #dff6dd;
+
+
+    --error:
+        #d13438;
+
+
+    --error-bg:
+        #fde7e9;
+
+
+    --warning:
+        #ffb900;
+
+
+    --warning-bg:
+        #fff4ce;
+
+
+    --shadow:
+
+        0 2px 8px rgba(0, 0, 0, .08);
+
+
+    --shadow-hover:
+
+        0 8px 20px rgba(0, 0, 0, .15);
+
+
+    --radius:
+
+        12px;
+
+
+}
+
+
+
+/* ==========================================================
+   RESET
+========================================================== */
+
+
+* {
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+}
+
+
+
+body {
+
+
+    background:
+        var(--background);
+
+
+    color:
+        var(--text);
+
+
+
+    font-family:
+
+        "Segoe UI",
+        SegoeUI,
+        Arial,
+        sans-serif;
+
+
+    min-height: 100vh;
+
+
+}
+
+
+
+/* ==========================================================
+   PAGE CONTAINER
+========================================================== */
+
+
+.page {
+
+
+    width:
+
+        min(1600px, 95%);
+
+
+    margin:
+
+        auto;
+
+
+}
+
+
+
+/* ==========================================================
+   HERO HEADER
+========================================================== */
+
+.hero {
+
+    margin-top: 25px;
+
+    padding: 35px 40px;
+
+    background:
+        linear-gradient(135deg,
+            #0078d4,
+            #004578);
+
+    color: white;
+
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+}
+
+
+
+.hero h1 {
+
+    font-size: 32px;
+
+    font-weight: 600;
+
+}
+
+
+.subtitle {
+
+    margin-top: 8px;
+
+    opacity: .9;
+
+}
+
+
+
+#themeButton {
+
+
+    background:
+        rgba(255, 255, 255, .15);
+
+
+    color: white;
+
+
+    border:
+
+        1px solid rgba(255, 255, 255, .35);
+
+
+    padding:
+
+        12px 22px;
+
+
+    border-radius: 8px;
+
+
+    font-size: 14px;
+
+
+    cursor: pointer;
+
+
+    backdrop-filter: blur(5px);
+
+
+    transition: .2s;
+
+
+}
+
+
+
+#themeButton:hover {
+
+
+    background: white;
+
+
+    color: #0078d4;
+
+
+}
+
+.run-id {
+
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-top: 8px;
+
+}
+
+
+
+/* ==========================================================
+   DARK MODE BUTTON
+========================================================== */
+
+
+#themeButton {
+
+
+    background:
+
+        rgba(255,
+            255,
+            255,
+            .15);
+
+
+    color: white;
+
+
+    border:
+
+        1px solid rgba(255,
+            255,
+            255,
+            .4);
+
+
+
+    padding:
+
+        10px 18px;
+
+
+
+    border-radius:
+
+        8px;
+
+
+
+    cursor: pointer;
+
+
+    font-size:
+
+        14px;
+
+
+
+    transition:
+
+        all .2s ease;
+
+
+}
+
+
+
+#themeButton:hover {
+
+
+    background: white;
+
+
+    color:
+
+        var(--primary);
+
+
+    transform:
+
+        translateY(-2px);
+
+
+}
+
+
+
+
+
+/* ==========================================================
+   TENANT INFORMATION PANEL
+========================================================== */
+
+
+.tenant-panel {
+
+    width: 100%;
+
+    margin: 25px 0;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit,
+            minmax(220px, 1fr));
+
+    gap: 20px;
+
+}
+
+
+
+.tenant-item {
+
+
+    background:
+
+        var(--surface);
+
+
+    padding:
+
+        20px;
+
+
+    border-radius:
+
+        var(--radius);
+
+
+    border:
+
+        1px solid var(--border);
+
+
+    box-shadow:
+
+        var(--shadow);
+
+
+    transition: .2s;
+
+
+}
+
+
+
+.tenant-item:hover {
+
+
+    transform: translateY(-3px);
+
+
+}
+
+
+
+.label {
+
+
+    display: block;
+
+
+    font-size: 12px;
+
+
+    color: var(--text-light);
+
+
+    margin-bottom: 8px;
+
+
+}
+
+
+
+.value {
+
+
+    font-size: 16px;
+
+
+    font-weight: 600;
+
+
+}
+
+/* ==========================================================
+   HERO BUTTON
+========================================================== */
+
+
+.hero {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+}
+
+
+.hero-right {
+
+    display: flex;
+
+    align-items: center;
+
+}
+
+
+
+#themeButton {
+
+
+    background: white;
+
+    color: var(--primary);
+
+    border: none;
+
+    padding: 12px 18px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, .15);
+
+
+    transition:
+        all .2s ease;
+
+}
+
+
+#themeButton:hover {
+
+
+    transform: translateY(-2px);
+
+
+    box-shadow:
+        0 5px 12px rgba(0, 0, 0, .25);
+
+
+}
+
+
+/* ==========================================================
+   PROGRESS CARD
+========================================================== */
+
+
+.progress-panel {
+
+
+    background:
+
+        var(--surface);
+
+
+    padding: 25px;
+
+
+    border-radius:
+
+        var(--radius);
+
+
+    box-shadow:
+
+        var(--shadow);
+
+
+    margin-bottom: 30px;
+
+
+}
+
+
+
+.progress-header {
+
+
+    font-size: 18px;
+
+
+    font-weight: 600;
+
+
+    margin-bottom: 15px;
+
+
+}
+
+
+
+.progress {
+
+
+    height: 20px;
+
+
+    background: #edebe9;
+
+
+    border-radius: 20px;
+
+
+    overflow: hidden;
+
+
+}
+
+
+
+.progress-fill {
+
+
+    height: 100%;
+
+
+    width: 0;
+
+
+    background:
+
+        linear-gradient(90deg,
+            #107c10,
+            #55b938);
+
+
+    transition:
+
+        width .5s ease;
+
+
+}
+
+.progress-percentage {
+
+    margin-top: 10px;
+
+    text-align: right;
+
+    font-weight: 600;
+
+    color: var(--text-light);
+
+}
+
+
+/* ==========================================================
+   SUMMARY CARDS
+========================================================== */
+
+
+.summary-grid {
+
+
+    display: grid;
+
+
+    grid-template-columns:
+
+        repeat(2,
+            1fr);
+
+
+    gap: 25px;
+
+
+    margin-bottom: 30px;
+
+
+}
+
+
+
+.summary-card {
+
+
+    background:
+
+        var(--surface);
+
+
+    padding: 25px;
+
+
+    border-radius:
+
+        var(--radius);
+
+
+    box-shadow:
+
+        var(--shadow);
+
+
+    border:
+
+        1px solid var(--border);
+
+
+}
+
+
+
+.summary-card h3 {
+
+
+    margin-bottom: 20px;
+
+
+    color:
+
+        var(--primary);
+
+
+}
+
+
+
+.summary-card p {
+
+
+    margin-bottom: 12px;
+
+
+}
+
+
+
+
+/* ==========================================================
+   RECENT FAILURES
+========================================================== */
+
+
+.failure-item {
+
+
+    background:
+        var(--error-bg);
+
+
+    border-left:
+
+        5px solid var(--error);
+
+
+    padding: 12px;
+
+
+    margin-bottom: 12px;
+
+
+    border-radius: 6px;
+
+
+}
+
+
+
+.failure-item strong {
+
+
+    color:
+        var(--error);
+
+
+}
+
+
+
+.failure-item span {
+
+
+    font-size: 14px;
+
+
+}
+
+
+
+
+
+/* ==========================================================
+   RESULT COUNTER
+========================================================== */
+
+
+.result-count {
+
+    background: #deecf9;
+
+    color: #0078d4;
+
+    padding: 5px 12px;
+
+    border-radius: 20px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+
+
+
+/* ==========================================================
+   DARK MODE
+========================================================== */
+
+
+body.dark {
+
+
+    --background: #201f1e;
+
+    --surface: #323130;
+
+    --text: #ffffff;
+
+    --text-light: #c8c6c4;
+
+    --border: #484644;
+
+
+    background:
+        var(--background);
+
+
+    color:
+        var(--text);
+
+}
+
+
+
+body.dark .card,
+body.dark .tenant-item,
+body.dark .summary-card,
+body.dark .progress-panel,
+body.dark .controls,
+body.dark .table-container {
+
+
+    background:
+        var(--surface);
+
+
+    color:
+        var(--text);
+
+
+}
+
+
+
+body.dark table {
+
+
+    color: white;
+
+
+}
+
+
+
+body.dark thead {
+
+
+    background: #1b1a19;
+
+
+}
+
+
+
+body.dark td {
+
+
+    border-color: #484644;
+
+
+}
+
+
+
+body.dark tbody tr:hover {
+
+
+    background: #3b3a39;
+
+
+}
+
+
+
+body.dark #themeButton {
+
+
+    background: #0078d4;
+
+
+    color: white;
+
+
+}
+
+
+
+
+
+/* ==========================================================
+   ANIMATION
+========================================================== */
+
+
+.card,
+.summary-card,
+.tenant-item,
+.progress-panel {
+
+
+    animation:
+
+        fadeIn .35s ease;
+
+
+}
+
+
+
+@keyframes fadeIn {
+
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(10px);
+
+    }
+
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+
+    }
+
+
+}
+
+
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+
+@media(max-width:900px) {
+
+
+    .hero {
+
+
+        flex-direction: column;
+
+
+        align-items: flex-start;
+
+
+    }
+
+
+
+    .tenant-panel {
+
+
+        grid-template-columns: 1fr;
+
+
+    }
+
+
+
+    .summary-grid {
+
+
+        grid-template-columns: 1fr;
+
+
+    }
+
+
+
+    .dashboard {
+
+
+        grid-template-columns: 1fr;
+
+
+    }
+
+
+
+    .controls {
+
+
+        flex-direction: column;
+
+
+    }
+
+
+
+    .controls input {
+
+
+        width: 100%;
+
+
+    }
+
+
+}
+
+/* ==========================================================
+   TABLE ENHANCEMENTS
+========================================================== */
+
+
+/*.table-container {
+
+    position: relative;
+
+    max-height: 700px;
+
+    overflow: auto;
+
+}*/
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    table-layout: fixed;
+
+}
+
+td {
+
+    padding: 12px;
+
+    vertical-align: top;
+
+    word-wrap: break-word;
+
+    white-space: normal;
+
+}
+
+
+th {
+
+    padding: 14px;
+
+    text-align: left;
+
+}
+
+th:nth-child(1),
+td:nth-child(1) {
+
+    width: 10%;
+
+}
+
+
+th:nth-child(2),
+td:nth-child(2) {
+
+    width: 30%;
+     word-break: break-word;
+
+}
+
+
+th:nth-child(3),
+td:nth-child(3) {
+
+    width: 15%;
+
+}
+
+
+th:nth-child(4),
+td:nth-child(4) {
+
+    width: 10%;
+
+}
+
+
+th:nth-child(5),
+td:nth-child(5) {
+
+    width: 12%;
+
+}
+
+
+th:nth-child(6),
+td:nth-child(6) {
+
+    width: 12%;
+
+}
+
+
+th:nth-child(7),
+td:nth-child(7) {
+
+    width: 11%;
+
+}
+
+.table-container {
+
+    width: 100%;
+
+    position: relative;
+
+    max-height: 700px;
+
+    overflow: auto;
+
+    background: var(--surface);
+
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+
+}
+
+.table-container::-webkit-scrollbar {
+
+    height: 10px;
+
+    width: 10px;
+
+}
+
+
+
+.table-container::-webkit-scrollbar-track {
+
+    background: #f3f2f1;
+
+}
+
+
+
+.table-container::-webkit-scrollbar-thumb {
+
+    background: #a19f9d;
+
+    border-radius: 20px;
+
+}
+
+
+
+.table-container::-webkit-scrollbar-thumb:hover {
+
+    background: #605e5c;
+
+}
+
+
+
+
+
+/* Sticky table header */
+
+
+thead th {
+
+
+    position: sticky;
+
+
+    top: 0;
+
+
+    z-index: 10;
+
+
+    background: #faf9f8;
+
+
+}
+
+
+
+
+
+body.dark thead th {
+
+
+    background: #1b1a19;
+
+
+}
+
+.table-header {
+
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 15px;
+
+
+}
+
+.table-header,
+.pagination {
+
+    width: 100%;
+
+}
+
+.table-info {
+
+
+    font-weight: 600;
+
+    color: var(--text-light);
+
+
+}
+
+
+
+.page-size-control {
+
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+
+}
+
+
+
+.page-size-control select {
+
+
+    height: 35px;
+
+    border-radius: 6px;
+
+    padding: 0 10px;
+
+
+}
+
+
+
+.pagination {
+
+
+    margin-top: 20px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 20px;
+
+
+}
+
+
+
+.pagination button {
+
+
+    padding: 8px 18px;
+
+    border: none;
+
+    border-radius: 6px;
+
+    background: #0078d4;
+
+    color: white;
+
+    cursor: pointer;
+
+
+}
+
+
+
+.pagination button:hover {
+
+
+    background: #106ebe;
+
+
+}
+
+
+
+
+
+/* ==========================================================
+   STATUS COLUMN
+========================================================== */
+
+
+.status {
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    min-width:80px;
+
+    padding:5px 12px;
+
+    border-radius:20px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    text-transform:uppercase;
+
+}
+
+
+
+.status.pass {
+
+
+    background: #dff6dd;
+
+
+    color: #107c10;
+
+
+}
+
+
+
+.status.fail {
+
+
+    background: #fde7e9;
+
+
+    color: #a4262c;
+
+
+}
+
+
+
+.status.warning {
+
+
+    background: #fff4ce;
+
+
+    color: #797300;
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================================
+   BUTTON STYLE
+========================================================== */
+
+
+button {
+
+
+    font-family:
+        "Segoe UI",
+        sans-serif;
+
+
+}
+
+
+
+button:active {
+
+
+    transform:
+        scale(.97);
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================================
+   EMPTY RESULTS
+========================================================== */
+
+
+.empty-state {
+
+
+    padding: 40px;
+
+
+    text-align: center;
+
+
+    color:
+        var(--text-light);
+
+
+    font-size: 16px;
+
+
+}
+
+
+
+.empty-state-icon {
+
+
+    font-size: 40px;
+
+
+    margin-bottom: 15px;
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================================
+   DASHBOARD CARDS
+========================================================== */
+
+
+.dashboard {
+
+
+    display: grid;
+
+
+    grid-template-columns:
+
+        repeat(4,
+            1fr);
+
+
+    gap: 20px;
+
+
+    margin-bottom: 30px;
+
+
+}
+
+
+
+.card {
+
+
+    background:
+
+        var(--surface);
+
+
+    border-radius:
+
+        var(--radius);
+
+
+    padding: 25px;
+
+
+    box-shadow:
+
+        var(--shadow);
+
+
+    border:
+
+        1px solid var(--border);
+
+
+    transition: .2s ease;
+
+
+}
+
+
+
+.card:hover {
+
+
+    transform:
+
+        translateY(-4px);
+
+
+    box-shadow:
+
+        0 8px 20px rgba(0, 0, 0, .12);
+
+
+}
+
+
+
+.card-icon {
+
+
+    font-size:
+
+        32px;
+
+
+    margin-bottom:
+
+        15px;
+
+
+}
+
+/* ==========================================================
+   CARD ICON COLORS
+========================================================== */
+
+
+.card.total .card-icon {
+
+    color:
+        var(--primary);
+
+}
+
+
+
+.card.pass .card-icon {
+
+    color:
+        var(--success);
+
+}
+
+
+
+.card.fail .card-icon {
+
+    color:
+        var(--error);
+
+}
+
+
+
+.card.success .card-icon {
+
+    color:
+        #8764b8;
+
+}
+
+.card-title {
+
+
+    color:
+
+        var(--text-light);
+
+
+    font-size:
+
+        14px;
+
+
+    margin-bottom:
+
+        10px;
+
+
+}
+
+
+
+.card-value {
+
+
+    font-size:
+
+        36px;
+
+
+    font-weight:
+
+        700;
+
+
+}
+
+
+
+.card.total .card-value {
+
+
+    color:
+
+        var(--primary);
+
+
+}
+
+
+
+.card.pass .card-value {
+
+
+    color:
+
+        var(--success);
+
+
+}
+
+
+
+.card.fail .card-value {
+
+
+    color:
+
+        var(--error);
+
+
+}
+
+
+
+.card.success .card-value {
+
+
+    color:
+
+        #8764b8;
+
+
+}
+
+
+
+
+
+
+/* ==========================================================
+   SEARCH CONTROLS
+========================================================== */
+
+
+.controls {
+
+
+    background:
+
+        var(--surface);
+
+
+    padding:
+
+        20px 25px;
+
+
+    border-radius:
+
+        var(--radius);
+
+
+    box-shadow:
+
+        var(--shadow);
+
+
+    display: flex;
+
+
+    align-items: flex-end;
+
+
+    gap: 20px;
+
+
+    margin-bottom: 25px;
+
+
+}
+
+
+
+.control-item {
+
+
+    display: flex;
+
+
+    flex-direction: column;
+
+
+    gap: 8px;
+
+
+}
+
+
+
+.control-item label {
+
+
+    font-size: 13px;
+
+
+    font-weight: 600;
+
+
+    color:
+
+        var(--text);
+
+
+}
+
+
+
+.controls input,
+.controls select {
+
+
+    height: 42px;
+
+
+    padding:
+
+        0 14px;
+
+
+    border-radius:
+
+        6px;
+
+
+    border:
+
+        1px solid #8a8886;
+
+
+    background: white;
+
+
+    font-size: 14px;
+
+
+}
+
+
+
+.controls input {
+
+
+    width: 420px;
+
+
+}
+
+
+
+.controls select {
+
+
+    width: 180px;
+
+
+}
+
+
+
+.controls input:focus,
+.controls select:focus {
+
+
+    outline: none;
+
+
+    border-color:
+
+        var(--primary);
+
+
+    box-shadow:
+
+        0 0 0 2px rgba(0, 120, 212, .25);
+
+
+}
+
+
+
+
+
+/* ==========================================================
+   TABLE ROW STATES
+========================================================== */
+
+
+tbody tr.fail-row {
+
+
+    background: #fff5f5;
+
+
+}
+
+
+
+tbody tr.pass-row {
+
+
+    background: #f7fff7;
+
+
+}
+
+
+
+tbody tr.warning-row {
+
+    background:#fffdf0;
+
+}
+
+
+body.dark tbody tr.fail-row {
+
+
+    background: #442726;
+
+
+}
+
+
+
+body.dark tbody tr.pass-row {
+
+
+    background: #193019;
+
+
+}
+
+
+
+body.dark tbody tr.warning-row {
+
+    background:#3b3200;
+
+}
+
+
+
+/* ==========================================================
+   TOOLTIP SUPPORT
+========================================================== */
+
+
+[data-tooltip] {
+
+
+    position: relative;
+
+
+    cursor: pointer;
+
+
+}
+
+
+
+[data-tooltip]:hover::after {
+
+
+    content:
+        attr(data-tooltip);
+
+
+    position: absolute;
+
+
+    bottom: -35px;
+
+
+    left: 50%;
+
+
+    transform:
+        translateX(-50%);
+
+
+    background: #323130;
+
+
+    color: white;
+
+
+    padding: 6px 10px;
+
+
+    border-radius: 4px;
+
+
+    font-size: 12px;
+
+
+    white-space: nowrap;
+
+
+    z-index: 100;
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================================
+   PRINT REPORT
+========================================================== */
+
+
+@media print {
+
+
+    body {
+
+
+        background: white;
+
+
+    }
+
+
+
+    #themeButton,
+    .controls {
+
+
+        display: none;
+
+
+    }
+
+
+
+    .card,
+    .summary-card,
+    .tenant-item,
+    .progress-panel,
+    .table-container {
+
+
+        box-shadow: none;
+
+
+        border: 1px solid #ccc;
+
+
+    }
+
+
+
+    table {
+
+
+        page-break-inside: auto;
+
+
+    }
+
+
+
+    tr {
+
+
+        page-break-inside: avoid;
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+/* ==========================================================
+   FLUENT UI FINISHING TOUCHES
+========================================================== */
+
+
+h1,
+h2,
+h3 {
+
+
+    letter-spacing: -.3px;
+
+
+}
+
+
+
+strong {
+
+
+    font-weight: 600;
+
+
+}
+
+
+
+section {
+
+
+    animation:
+
+        fadeIn .3s ease;
+
+
+}
+
+
+
+
+
+/* Smooth transitions */
+
+
+* {
+
+
+    transition:
+
+
+        background-color .2s ease,
+
+        border-color .2s ease,
+
+        color .2s ease;
+
+
+}

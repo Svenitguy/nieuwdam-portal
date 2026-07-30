@@ -1,0 +1,12 @@
+[
+  {
+    "DisplayName": "SG_IT_Admins",
+    "Description": "IT administrators security group",
+    "MailNickname": "SG_IT_Admins"
+  },
+  {
+    "DisplayName": "SG_IT_Support",
+    "Description": "IT support security group",
+    "MailNickname": "SG_IT_Support"
+  }
+]
