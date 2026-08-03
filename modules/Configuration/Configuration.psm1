@@ -291,6 +291,132 @@ function Get-CleanupConfiguration {
 
 }
 
+
+function Get-SecurityConfiguration {
+
+    param(
+        [Parameter(Mandatory)]
+        [string]$ConfigFolder
+    )
+
+
+    # ==================================================
+    # Load security.json
+    # ==================================================
+
+    $SecurityPath =
+        Join-Path `
+            -Path $ConfigFolder `
+            -ChildPath "security.json"
+
+
+    if(!(Test-Path $SecurityPath)) {
+
+        Write-Message `
+            -Status "ERROR" `
+            -Message "Security configuration missing: $SecurityPath" `
+            -Component "CONFIGURATION"
+
+        throw "Security configuration missing: $SecurityPath"
+
+    }
+
+
+    $SecurityConfiguration =
+        Get-Content `
+            -Path $SecurityPath `
+            -Raw `
+            -Encoding UTF8 |
+        ConvertFrom-Json
+
+
+
+    # ==================================================
+    # Load conditional-access.json
+    # ==================================================
+
+    $ConditionalAccessPath =
+        Join-Path `
+            -Path $ConfigFolder `
+            -ChildPath "conditional-access.json"
+
+
+    if(!(Test-Path $ConditionalAccessPath)) {
+
+        Write-Message `
+            -Status "WARNING" `
+            -Message "Conditional Access configuration missing: $ConditionalAccessPath" `
+            -Component "CONFIGURATION"
+
+
+        $ConditionalAccessConfiguration = @{
+            Policies = @()
+        }
+
+    }
+    else {
+
+
+        $ConditionalAccessConfiguration =
+            Get-Content `
+                -Path $ConditionalAccessPath `
+                -Raw `
+                -Encoding UTF8 |
+            ConvertFrom-Json
+
+
+    }
+
+
+
+    # ==================================================
+    # Combine configuration
+    # ==================================================
+
+    $Configuration = @{
+
+        PasswordPolicy =
+            $SecurityConfiguration.PasswordPolicy
+
+
+        AuthenticationMethods =
+            $SecurityConfiguration.AuthenticationMethods
+
+
+        MFA =
+            $SecurityConfiguration.MFA
+
+
+        ConditionalAccess =
+            $ConditionalAccessConfiguration
+
+
+        SecurityDefaults =
+            $SecurityConfiguration.SecurityDefaults
+
+
+        BreakGlassAccounts =
+            $SecurityConfiguration.BreakGlassAccounts
+
+    }
+
+
+
+    Write-Message `
+        -Status "PASS" `
+        -Message (
+            "Security configuration loaded. Conditional Access policies: {0}" `
+            -f `
+            $ConditionalAccessConfiguration.Policies.Count
+        ) `
+        -Component "CONFIGURATION"
+
+
+
+    return [PSCustomObject]$Configuration
+
+}
+
 # ==================================================
 # Export
 # ==================================================
@@ -301,4 +427,5 @@ Export-ModuleMember -Function @(
     "Get-MembershipConfiguration"
     "Get-TenantConfiguration"
     "Get-CleanupConfiguration"
+    "Get-SecurityConfiguration"
 )

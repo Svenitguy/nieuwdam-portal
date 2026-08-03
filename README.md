@@ -8,6 +8,25 @@
 
 ---
 
+# 📚 Table of Contents
+
+- [Project Vision](#-project-vision)
+- [Current Project Status](#-current-project-status)
+- [Environment Statistics](#-environment-statistics)
+- [Platform Architecture](#-platform-architecture)
+- [Identity Automation Framework](#-identity-automation-framework)
+- [Core Features](#-core-features)
+- [Security Considerations](#-security-considerations)
+- [Repository Structure](#-repository-structure)
+- [Screenshots](#-screenshots)
+- [Documentation](#-documentation)
+- [Roadmap](#-roadmap)
+- [First Release](#-first-release)
+- [About This Project](#-about-this-project)
+- - [License](#-license)
+
+---
+
 # 🎯 Project Vision
 
 Many portfolio projects demonstrate isolated cloud components such as a virtual machine deployment or a simple user creation script.
@@ -32,7 +51,7 @@ The goal is not only to deploy technology, but to demonstrate the engineering de
 
 The project is actively under development.
 
-The current implementation focuses on the **Microsoft Entra ID Identity Platform**, providing a complete identity lifecycle management framework including provisioning, validation, reporting and controlled deprovisioning.
+The current implementation focuses on the **Microsoft Entra ID Identity Platform**, providing a complete identity lifecycle management framework including provisioning, security configuration, validation, reporting and controlled deprovisioning.
 
 ## Current Environment
 
@@ -64,8 +83,8 @@ Current identity platform implementation:
 | Users Managed                 |               125 |
 | Security Groups               |                90 |
 | Group Membership Relations    |               676 |
-| PowerShell Deployment Scripts |                 7 |
-| PowerShell Modules            |                 7 |
+| PowerShell Scripts            |                 8 |
+| PowerShell Modules            |                 8 |
 | Reporting Formats             | HTML / CSV / JSON |
 | Deployment State              |              JSON |
 | Logging                       |   Component Based |
@@ -100,24 +119,32 @@ The current identity layer consists of:
                          ▼
 
               PowerShell Automation Layer
-                         │
-        ┌────────────────┼────────────────┐
-        ▼                ▼                ▼
 
- Graph Module     Provisioning       Validation
-                  Module             Module
+        ┌───────────────┼────────────────┐
+        ▼               ▼                ▼
+ Graph Module    Provisioning      Security Module
+                  Module
 
-        │                │                │
-        └────────────────┼────────────────┘
-                         ▼
+        │               │                │
+        └───────────────┼────────────────┘
+                        ▼
 
-                Microsoft Entra ID
+                 Microsoft Entra ID
 
-                         │
+                        │
+                        ▼
 
-                         ▼
+              Validation Module
 
-              Reporting & State Management
+                        │
+                        ▼
+
+              Reporting Module
+
+                        │
+                        ▼
+
+              State Management
 ```
 
 ---
@@ -137,6 +164,9 @@ Provision Groups
         │
         ▼
 Assign Group Memberships
+        │
+        ▼
+Configure Security
         │
         ▼
 Validate Environment
@@ -168,7 +198,7 @@ Each stage can run independently or as part of the complete deployment process.
 ## Automation Framework
 
 * Modular PowerShell architecture
-* Microsoft Graph API integration
+* Microsoft Graph integration
 * Configuration-driven deployment
 * Idempotent execution
 * Dry-run support
@@ -194,14 +224,14 @@ Each stage can run independently or as part of the complete deployment process.
 
 # 🔐 Security Considerations
 
-Security is considered throughout the platform design.
+Security is implemented as an independent architectural capability within the platform design.
 
 Implemented principles:
 
 * No credentials stored in source control
 * Secrets excluded through `.gitignore`
 * Configuration separated from implementation
-* Microsoft Graph based automation
+* Microsoft Graph integrated automation
 * Least privilege permission model
 * Validation before deployment
 * Controlled removal workflows
@@ -227,10 +257,10 @@ nieuwdam-portal/
 │   └── examples/
 │
 ├── docs/
-│   ├── architecture.md
-│   ├── deployment-guide.md
-│   ├── security-design.md
-│   └── screenshots/
+│   ├── 01-project-overview.md
+│   ├── 02-architecture.md
+│   ├── screenshots/
+│   └── testing/
 │
 ├── modules/
 │   ├── Configuration/
@@ -239,9 +269,18 @@ nieuwdam-portal/
 │   ├── Logging/
 │   ├── Provisioning/
 │   ├── Reporting/
+│   ├── Security/
 │   └── Validation/
 │
-├── scripts/
+├── scripts/   
+│   ├── deploy-environment.ps1
+│   ├── 01-provision-users.ps1
+│   ├── 02-provision-groups.ps1
+│   ├── 03-provision-group-memberships.ps1
+│   ├── 04-validate-environment.ps1
+│   ├── 05-save-provision-state.ps1
+│   ├── 06-deprovision-environment.ps1
+│   └── 07-configure-security.ps1
 │
 ├── README.md
 │
@@ -254,9 +293,9 @@ The repository is structured around maintainability, scalability and future Azur
 
 # 📸 Screenshots
 
-The documentation contains visual examples of the platform operation.
+Screenshots will be added as the platform documentation evolves.
 
-Examples:
+Planned examples include:
 
 ## Deployment Execution
 
@@ -297,10 +336,7 @@ Current documentation includes:
 
 * Project overview
 * Architecture documentation
-* Deployment guide
-* Security design
-* Testing documentation
-* Validation reports
+* Testing documentation and future test results
 * Screenshots
 
 ---
@@ -347,6 +383,7 @@ Includes:
 
 ✅ Microsoft Graph integration
 ✅ Identity provisioning framework
+✅ Security configuration framework
 ✅ Modular PowerShell architecture
 ✅ Validation engine
 ✅ Reporting framework
@@ -362,3 +399,9 @@ Nieuwdam is a personal cloud engineering project created to develop practical ex
 Rather than focusing only on individual certification exercises, this project demonstrates how cloud services can be combined into a complete, maintainable and secure platform.
 
 The project continues to evolve as new technologies, architectures and engineering practices are introduced.
+
+## License
+
+This project is licensed under the Apache License 2.0.
+
+See the [LICENSE](LICENSE) file for details.

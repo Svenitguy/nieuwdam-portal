@@ -71,6 +71,8 @@ function Connect-EntraGraph {
 
         "Microsoft.Graph.Groups"
 
+        "Microsoft.Graph.Identity.SignIns"
+
     )
 
 
@@ -108,6 +110,16 @@ function Connect-EntraGraph {
         "User.ReadWrite.All"
 
         "Group.ReadWrite.All"
+
+        "Policy.ReadWrite.AuthenticationMethod"
+
+        "Policy.ReadWrite.ConditionalAccess"
+
+        "Policy.Read.All"
+
+        "Directory.ReadWrite.All"
+
+        "RoleManagement.Read.Directory"
 
     )
 
