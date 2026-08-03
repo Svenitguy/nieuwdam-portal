@@ -287,7 +287,7 @@ Write-ProvisioningSummary `
     -Title "Membership Provisioning Summary" `
     -Summary @{
         Added = $AddedCount
-        "Would Add" = $WouldAddCount
+        "Would Create" = $WouldAddCount
         Skipped = $SkippedCount
         Failed = $FailedCount
     }

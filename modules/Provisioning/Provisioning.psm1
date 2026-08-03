@@ -659,7 +659,7 @@ function Add-EntraGroupMembers {
             # Validate user
             # ==================================================
 
-            $User =
+            <#$User =
                 $UserLookup[$Entry.UserName]
 
 
@@ -747,6 +747,126 @@ function Add-EntraGroupMembers {
 
                 continue
 
+            }#>
+
+            # ==================================================
+            # Resolve objects
+            # ==================================================
+
+            $User =
+                 $UserLookup[$Entry.UserName]
+
+
+            $Group =
+                $GroupLookup[$GroupName]
+
+
+
+            # ==================================================
+            # DryRun handling
+            # ==================================================
+
+            if($DryRun){
+
+
+                Write-Host `
+                    "       WOULD ADD" `
+                    -ForegroundColor Magenta
+
+
+
+                Write-Logging `
+                    -Message "WOULD ADD MEMBER - $MembershipName" `
+                    -Level "DRYRUN" `
+                    -Component "PROVISIONING"
+
+
+
+                [void]$Results.Add(
+                    [PSCustomObject]@{
+
+                        Timestamp = Get-Date
+
+                        Type = "Membership"
+
+                        Name = $MembershipName
+
+                        Action = "WouldAdd"
+
+                        Message = "DryRun - Membership would be created"
+
+                    }
+                )
+
+
+                continue
+
+            }
+
+
+
+            # ==================================================
+            # Validate objects (real run only)
+            # ==================================================
+
+            if(-not $User){
+
+
+                Write-Host `
+                    "       FAILED - User not found" `
+                    -ForegroundColor Red
+
+
+                [void]$Results.Add(
+                    [PSCustomObject]@{
+
+                        Timestamp = Get-Date
+
+                        Type = "Membership"
+
+                        Name = $MembershipName
+
+                        Action = "Failed"
+
+                        Message = "User not found"
+
+                    }
+                )
+
+
+                continue
+
+            }
+
+
+
+            if(-not $Group){
+
+
+                Write-Host `
+                    "       FAILED - Group not found" `
+                    -ForegroundColor Red
+
+
+                [void]$Results.Add(
+                    [PSCustomObject]@{
+
+                        Timestamp = Get-Date
+
+                        Type = "Membership"
+
+                        Name = $MembershipName
+
+                        Action = "Failed"
+
+                        Message = "Group not found"
+
+                    }
+                )
+
+
+                continue
+
             }
 
 
@@ -800,7 +920,7 @@ function Add-EntraGroupMembers {
             # DryRun
             # ==================================================
 
-            if($DryRun){
+            <#if($DryRun){
 
 
                 Write-Host `
@@ -835,7 +955,7 @@ function Add-EntraGroupMembers {
 
                 continue
 
-            }
+            }#>
 
 
 
