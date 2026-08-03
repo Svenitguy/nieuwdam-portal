@@ -156,15 +156,6 @@ bin/
 obj/
 
 # =========================
-# Documentation drafts
-# =========================
-
-docs/01-project-overview.md
-docs/architecture.md
-docs/deployment-guide.md
-docs/security-design.md
-
-# =========================
 # Local maintenance scripts
 # =========================
 
