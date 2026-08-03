@@ -8,6 +8,7 @@
 
 ---
 
+<a name="table-of-contents"></a>
 # 📚 Table of Contents
 
 - [Project Vision](#-project-vision)
@@ -23,7 +24,7 @@
 - [Roadmap](#-roadmap)
 - [First Release](#-first-release)
 - [About This Project](#-about-this-project)
-- - [License](#-license)
+- [License](#-license)
 
 ---
 
@@ -44,6 +45,8 @@ The project focuses on:
 * Creating repeatable deployment workflows
 
 The goal is not only to deploy technology, but to demonstrate the engineering decisions behind building and operating a secure cloud environment.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
 
 ---
 
@@ -72,6 +75,8 @@ The current implementation focuses on the **Microsoft Entra ID Identity Platform
 | Azure Infrastructure             | 🚧 Planned    |
 | Terraform Infrastructure-as-Code | 🚧 Planned    |
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # 📊 Environment Statistics
@@ -90,6 +95,8 @@ Current identity platform implementation:
 | Logging                       |   Component Based |
 
 The environment will continue to expand as additional Azure services are introduced.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
 
 ---
 
@@ -147,6 +154,8 @@ The current identity layer consists of:
               State Management
 ```
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # ⚙️ Identity Automation Framework
@@ -182,6 +191,8 @@ Controlled Deprovisioning
 ```
 
 Each stage can run independently or as part of the complete deployment process.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
 
 ---
 
@@ -220,6 +231,8 @@ Each stage can run independently or as part of the complete deployment process.
 * Audit-friendly logging
 * Modular expansion model
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # 🔐 Security Considerations
@@ -238,6 +251,8 @@ Implemented principles:
 * Audit-friendly logging
 
 Sensitive environment data is intentionally excluded from the public repository.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
 
 ---
 
@@ -289,6 +304,8 @@ nieuwdam-portal/
 
 The repository is structured around maintainability, scalability and future Azure expansion.
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # 📸 Screenshots
@@ -326,6 +343,8 @@ Examples of:
 docs/screenshots/entra-environment.png
 ```
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # 📚 Documentation
@@ -338,6 +357,8 @@ Current documentation includes:
 * Architecture documentation
 * Testing documentation and future test results
 * Screenshots
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
 
 ---
 
@@ -371,6 +392,8 @@ Planned milestones:
 * Cost management
 * Operational dashboards
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # 🚀 First Release
@@ -390,6 +413,8 @@ Includes:
 ✅ Deployment state management
 ✅ Documentation structure
 
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
 ---
 
 # 👨‍💻 About This Project
@@ -400,8 +425,12 @@ Rather than focusing only on individual certification exercises, this project de
 
 The project continues to evolve as new technologies, architectures and engineering practices are introduced.
 
-## License
+---
+
+# 📜 License
 
 This project is licensed under the Apache License 2.0.
 
 See the [LICENSE](LICENSE) file for details.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
