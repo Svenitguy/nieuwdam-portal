@@ -66,7 +66,17 @@ param(
     [switch]
     $PassThru,
 
-    [string]$RunId
+    [string]$RunId,
+
+    [Parameter()]
+    [switch]
+    $UseExistingGraphConnection,
+
+    [switch]
+    $UseExistingGraphCache,
+
+    [switch]
+    $SkipConfirmation
 
 )
 
@@ -179,9 +189,44 @@ Write-Logging `
 # Connect Microsoft Graph
 # ==================================================
 
-Connect-EntraGraph `
-    -AuthenticationMode Interactive
+if($UseExistingGraphConnection){
 
+    Write-Message `
+        -Status PASS `
+        -Message "Using existing Microsoft Graph connection." `
+        -Component GRAPH
+
+}
+else {
+
+    Connect-EntraGraph `
+        -AuthenticationMode Interactive
+
+}
+
+# ==================================================
+# Confirm live deployment
+# ==================================================
+
+if (-not $DryRun -and -not $SkipConfirmation) {
+
+    Confirm-LiveDeployment `
+        -Operations @(
+            "Configure Microsoft Entra ID group memberships"
+        )
+
+}
+
+# ==================================================
+# Confirm live deployment
+# ==================================================
+
+if (-not $DryRun -and -not $SkipConfirmation) {
+
+    Confirm-LiveDeployment `
+        -Operation "Modify Microsoft Entra ID group memberships"
+
+}
 
 # ==================================================
 # Load configuration
@@ -201,7 +246,7 @@ Get-MembershipConfiguration `
 # Load existing Entra ID objects
 # ==================================================
 
-Write-Host ""
+<#Write-Host ""
 
 Write-Status `
     -Status "INFO" `
@@ -218,8 +263,33 @@ $GraphUsers =
 $GraphGroups =
     @(
         $GraphCache.Groups
+    )#>
+
+# ==================================================
+# Load existing Entra ID objects
+# ==================================================
+
+Write-Host ""
+
+Write-Status `
+    -Status "INFO" `
+    -Message "Loading existing Entra ID objects..."
+
+
+$DirectoryCache =
+    Initialize-GraphCache
+
+
+$GraphUsers =
+    @(
+        $DirectoryCache.Users
     )
 
+
+$GraphGroups =
+    @(
+        $DirectoryCache.Groups
+    )
 
 # ==================================================
 # DryRun information

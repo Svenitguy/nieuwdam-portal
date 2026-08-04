@@ -34,13 +34,24 @@
 
 param(
 
-[string]$DeploymentLogFile,
+    [Parameter()]
+    [switch]
+    $DryRun,
 
-[string]$RunId,
+    [string]$DeploymentLogFile,
 
-[Parameter()]
-[switch]
-$PassThru
+    [string]$RunId,
+
+    [Parameter()]
+    [switch]
+    $PassThru,
+
+    [Parameter()]
+    [switch]
+    $UseExistingGraphConnection,
+
+    [switch]
+    $UseExistingGraphCache
 
 )
 
@@ -206,7 +217,20 @@ Write-Logging `
 # Connect Microsoft Graph
 # ==================================================
 
-Connect-EntraGraph
+if($UseExistingGraphConnection){
+
+    Write-Message `
+        -Status PASS `
+        -Message "Using existing Microsoft Graph connection." `
+        -Component GRAPH
+
+}
+else {
+
+    Connect-EntraGraph `
+        -AuthenticationMode Interactive
+
+}
 
 
 # ==================================================

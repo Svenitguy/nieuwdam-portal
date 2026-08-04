@@ -108,10 +108,98 @@ function Write-ProvisioningSummary {
 }
 
 # ==================================================
+# Confirm-LiveDeployment
+#
+# Requires explicit confirmation before modifying
+# Microsoft Entra ID tenant.
+# ==================================================
+
+function Confirm-LiveDeployment {
+
+    param(
+
+        [Parameter(Mandatory)]
+        [string[]]
+        $Operations
+
+    )
+
+
+    $Tenant = Get-CurrentTenant
+
+
+    Write-Host ""
+
+    Write-Host "================================================" `
+        -ForegroundColor Yellow
+
+    Write-Host " LIVE DEPLOYMENT WARNING" `
+        -ForegroundColor Yellow
+
+    Write-Host "================================================" `
+        -ForegroundColor Yellow
+
+    Write-Host ""
+
+
+    Write-Host "Tenant ID : $($Tenant.TenantId)"
+
+    if($Tenant.Account){
+
+        Write-Host "Account   : $($Tenant.Account)"
+
+    }
+
+
+    Write-Host ""
+
+    Write-Host "The following operations will be performed:"
+
+    Write-Host ""
+
+
+    foreach($Operation in $Operations){
+
+        Write-Host " - $Operation"
+
+    }
+
+
+    Write-Host ""
+
+    Write-Host "This operation will modify your Microsoft Entra ID tenant."
+
+    Write-Host ""
+
+    Write-Host "This operation cannot be automatically rolled back."
+
+    Write-Host ""
+
+
+    $Confirmation =
+        Read-Host "Type DEPLOY to continue"
+
+
+    if($Confirmation -ne "DEPLOY"){
+
+        throw "Deployment cancelled by user."
+
+    }
+
+
+    Write-Host ""
+
+    Write-Host "Deployment confirmed." `
+        -ForegroundColor Green
+
+}
+
+# ==================================================
 # Export Functions
 # ==================================================
 
 Export-ModuleMember -Function @(
     "Get-ResultCount",
-    "Write-ProvisioningSummary"
+    "Write-ProvisioningSummary",
+    "Confirm-LiveDeployment"
 )

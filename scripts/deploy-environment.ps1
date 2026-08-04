@@ -250,12 +250,29 @@ Write-DeploymentLog `
     -Message "Connecting to Microsoft Graph." `
     -Level INFO
 
-Connect-Graph
+Connect-EntraGraph
 
 Write-DeploymentLog `
     -Message "Microsoft Graph connection established." `
     -Level PASS `
     -Component "SYSTEM"
+
+# ==================================================
+# Confirm live deployment
+# ==================================================
+
+if (-not $DryRun) {
+
+    Confirm-LiveDeployment `
+        -Operation @(
+            "Create Microsoft Entra ID users"
+            "Create Microsoft Entra ID groups"
+            "Configure Microsoft Entra ID group memberships"
+            "Validate Microsoft Entra ID environment"
+            "Save provisioning state"
+        )
+
+}
 
 # ==================================================
 # Step 1/4 - Provision Users
@@ -283,7 +300,9 @@ if($DryRun) {
         -DryRun `
         -DeploymentLogFile $DeploymentLogFile `
         -RunId $RunId `
-        -PassThru
+        -PassThru `
+        -UseExistingGraphConnection `
+        -SkipConfirmation
 
 }
 else {
@@ -292,7 +311,9 @@ else {
     & "$ScriptRoot\01-provision-users.ps1" `
         -DeploymentLogFile $DeploymentLogFile `
         -RunId $RunId `
-        -PassThru
+        -PassThru `
+        -UseExistingGraphConnection `
+        -SkipConfirmation
 
 }
 
@@ -341,7 +362,9 @@ if($DryRun) {
         -DryRun `
         -DeploymentLogFile $DeploymentLogFile `
         -RunId $RunId `
-        -PassThru
+        -PassThru `
+        -UseExistingGraphConnection `
+        -SkipConfirmation
 
 
 }
@@ -351,7 +374,9 @@ else {
     & "$ScriptRoot\02-provision-groups.ps1" `
         -DeploymentLogFile $DeploymentLogFile `
         -RunId $RunId `
-        -PassThru
+        -PassThru `
+        -UseExistingGraphConnection `
+        -SkipConfirmation
 
 }
 
@@ -400,7 +425,9 @@ if($DryRun) {
         -DryRun `
         -DeploymentLogFile $DeploymentLogFile `
         -RunId $RunId `
-        -PassThru
+        -PassThru `
+        -UseExistingGraphConnection `
+        -SkipConfirmation
 
 
 }
@@ -410,7 +437,9 @@ else {
     & "$ScriptRoot\03-provision-group-memberships.ps1" `
         -DeploymentLogFile $DeploymentLogFile `
         -RunId $RunId `
-        -PassThru
+        -PassThru `
+        -UseExistingGraphConnection `
+        -SkipConfirmation
 
 }
 
@@ -451,7 +480,7 @@ Write-DeploymentLog `
     -RunId $RunId `
     -PassThru#>
 
-$ValidationResult =
+<#$ValidationResult =
 & "$ScriptRoot\04-validate-environment.ps1" `
     -DeploymentLogFile $DeploymentLogFile `
     -RunId $RunId `
@@ -478,13 +507,70 @@ Write-DeploymentLog `
 Write-DeploymentLog `
     -Message "STEP 4/4 - Validation completed." `
     -Level PASS `
-    -Component "SYSTEM"
+    -Component "SYSTEM"#>
+
+if($DryRun) {
+
+
+    Write-Host ""
+
+    Write-Host "DRY-RUN MODE - Validation skipped" `
+        -ForegroundColor Yellow
+
+
+    Write-DeploymentLog `
+        -Message "STEP 4/4 - Validation skipped because deployment is running in DRY-RUN mode." `
+        -Level INFO `
+        -Component "SYSTEM"
+
+
+}
+else {
+
+
+    $ValidationResult =
+    & "$ScriptRoot\04-validate-environment.ps1" `
+        -DeploymentLogFile $DeploymentLogFile `
+        -RunId $RunId `
+        -PassThru `
+        -UseExistingGraphConnection
+
+
+
+    if($ValidationResult.Failed -gt 0){
+
+        throw "Deployment stopped. Validation failed with $($ValidationResult.Failed) errors."
+
+    }
+
+
+
+    Write-DeploymentLog `
+        -Message (
+            "Validation summary: TotalChecks: {0}, Passed: {1}, Failed: {2}" `
+            -f `
+            $ValidationResult.TotalChecks,
+            $ValidationResult.Passed,
+            $ValidationResult.Failed
+        ) `
+        -Level INFO `
+        -Component "SYSTEM"
+
+
+
+    Write-DeploymentLog `
+        -Message "STEP 4/4 - Validation completed." `
+        -Level PASS `
+        -Component "SYSTEM"
+
+
+}
 
 # ==================================================
 # Step 5/5 - Save Provision State
 # ==================================================
 
-Write-Host ""
+<#Write-Host ""
 
 Write-Host "STEP 5/5 - Saving provision state" `
 -ForegroundColor Cyan
@@ -518,7 +604,70 @@ Write-DeploymentLog `
 Write-DeploymentLog `
     -Message "STEP 5/5 - Save provision state completed." `
     -Level PASS `
-    -Component "SYSTEM"
+    -Component "SYSTEM"#>
+
+# ==================================================
+# Step 5/5 - Save Provision State
+# ==================================================
+
+Write-Host ""
+
+Write-Host "Step 5/5 - Save Provision State (Skipped during DryRun)" `
+-ForegroundColor Cyan
+
+
+if($DryRun) {
+
+    Write-Host ""
+    
+    Write-Host "DRY-RUN MODE - Provision state not saved" `
+        -ForegroundColor Yellow
+
+
+    Write-DeploymentLog `
+        -Message "STEP 5/5 - Save provision state skipped because deployment is running in DRY-RUN mode." `
+        -Level INFO `
+        -Component "SYSTEM"
+
+
+}
+else {
+
+
+    Write-DeploymentLog `
+        -Message "STEP 5/5 - Save provision state started." `
+        -Level INFO `
+        -Component "SYSTEM"
+
+
+
+    $StateResult =
+    & "$ScriptRoot\05-save-provision-state.ps1" `
+        -DeploymentLogFile $DeploymentLogFile `
+        -RunId $RunId
+
+
+
+    Write-DeploymentLog `
+        -Message (
+            "Provision state saved. File: {0}. Users: {1}, Groups: {2}, Memberships: {3}" `
+            -f `
+            $StateResult.StateFile,
+            $StateResult.Users,
+            $StateResult.Groups,
+            $StateResult.Memberships
+        ) `
+        -Level PASS `
+        -Component "SYSTEM"
+
+
+
+    Write-DeploymentLog `
+        -Message "STEP 5/5 - Save provision state completed." `
+        -Level PASS `
+        -Component "SYSTEM"
+
+}
 
 # ==================================================
 # Deployment Completed

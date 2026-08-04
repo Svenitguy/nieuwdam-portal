@@ -60,7 +60,18 @@ param(
     [switch]
     $PassThru,
 
-    [string]$RunId
+    [string]$RunId,
+
+    [Parameter()]
+    [switch]
+    $UseExistingGraphConnection,
+
+    [switch]
+    $UseExistingGraphCache,
+
+    [Parameter()]
+    [switch]
+    $SkipConfirmation
 
 )
 
@@ -176,9 +187,40 @@ Write-Logging `
 # Connect Microsoft Graph
 # ==================================================
 
-Connect-EntraGraph `
-    -AuthenticationMode Interactive
+<#if (-not $UseExistingGraphConnection) {
 
+    Connect-EntraGraph `
+        -AuthenticationMode Interactive
+
+}#>
+
+if($UseExistingGraphConnection){
+
+    Write-Message `
+        -Status PASS `
+        -Message "Using existing Microsoft Graph connection." `
+        -Component GRAPH
+
+}
+else {
+
+    Connect-EntraGraph `
+        -AuthenticationMode Interactive
+
+}
+
+# ==================================================
+# Confirm live deployment
+# ==================================================
+
+if (-not $DryRun -and -not $SkipConfirmation) {
+
+    Confirm-LiveDeployment `
+        -Operations @(
+            "Create Microsoft Entra ID users"
+        )
+
+}
 
 # ==================================================
 # Load configuration
@@ -205,12 +247,32 @@ Get-TenantConfiguration `
 
 Write-Host ""
 
-Write-Status `
+<#Write-Status `
     -Status "INFO" `
-    -Message "Loading existing Entra ID users..."
+    -Message "Loading existing Entra ID users..."#>
 
-$DirectoryCache =
-Initialize-GraphCache
+<#$DirectoryCache =
+Initialize-GraphCache#>
+
+if ($UseExistingGraphCache) {
+
+    Write-Message `
+        -Status PASS `
+        -Message "Using existing Graph cache." `
+        -Component GRAPH
+
+    $DirectoryCache = Get-GraphCache
+
+}
+else {
+
+    Write-Status `
+        -Status INFO `
+        -Message "Loading existing Entra ID users..."
+
+    $DirectoryCache = Initialize-GraphCache
+
+}
 
 $GraphUsers =
 $DirectoryCache.Users

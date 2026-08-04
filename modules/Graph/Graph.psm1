@@ -138,7 +138,7 @@ function Connect-EntraGraph {
 
             Write-Message `
                 -Status "PASS" `
-                -Message "Existing Microsoft Graph connection found." `
+                -Message "Existing Microsoft Graph connection found. Reusing current session." `
                 -Component "GRAPH"
 
         }
@@ -238,7 +238,8 @@ function Connect-EntraGraph {
                     Connect-MgGraph `
                         -TenantId $TenantId `
                         -ClientId $ClientId `
-                        -CertificateThumbprint $CertificateThumbprint
+                        -CertificateThumbprint $CertificateThumbprint `
+                        -NoWelcome
 
 
 

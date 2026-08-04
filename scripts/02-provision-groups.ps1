@@ -58,7 +58,18 @@ param(
     [switch]
     $PassThru,
 
-    [string]$RunId
+    [string]$RunId,
+
+    [Parameter()]
+    [switch]
+    $UseExistingGraphConnection,
+
+    [switch]
+    $UseExistingGraphCache,
+
+    [Parameter()]
+    [switch]
+    $SkipConfirmation
 
 )
 
@@ -177,8 +188,33 @@ Write-Logging `
 # Connect Microsoft Graph
 # ==================================================
 
-Connect-EntraGraph `
-    -AuthenticationMode Interactive
+if($UseExistingGraphConnection){
+
+    Write-Message `
+        -Status PASS `
+        -Message "Using existing Microsoft Graph connection." `
+        -Component GRAPH
+
+}
+else {
+
+    Connect-EntraGraph `
+        -AuthenticationMode Interactive
+
+}
+
+# ==================================================
+# Confirm live deployment
+# ==================================================
+
+if (-not $DryRun -and -not $SkipConfirmation) {
+
+    Confirm-LiveDeployment `
+        -Operations @(
+            "Create Microsoft Entra ID groups"
+        )
+
+}
 
 # ==================================================
 # Load configuration
@@ -204,7 +240,7 @@ Get-TenantConfiguration `
 # Load existing Entra ID objects
 # ==================================================
 
-Write-Host ""
+<#Write-Host ""
 
 Write-Status `
     -Status "INFO" `
@@ -217,7 +253,40 @@ Initialize-GraphCache
 $GraphGroups =
 $DirectoryCache.Groups
 
-$GroupsBefore = $GraphGroups.Count
+$GroupsBefore = $GraphGroups.Count#>
+
+# ==================================================
+# Load existing Entra ID objects
+# ==================================================
+
+Write-Host ""
+
+if ($UseExistingGraphCache) {
+
+    Write-Message `
+        -Status PASS `
+        -Message "Using existing Graph cache." `
+        -Component GRAPH
+
+    $DirectoryCache = Get-GraphCache
+
+}
+else {
+
+    Write-Status `
+        -Status INFO `
+        -Message "Loading existing Entra ID groups..."
+
+    $DirectoryCache = Initialize-GraphCache
+
+}
+
+
+$GraphGroups =
+$DirectoryCache.Groups
+
+$GroupsBefore =
+$GraphGroups.Count
 
 # ==================================================
 # DryRun information
