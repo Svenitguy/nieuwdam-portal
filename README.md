@@ -2,6 +2,12 @@
 
 ## Enterprise Azure Infrastructure & Identity Platform for a Fictional Belgian Municipality
 
+> **Project Status**
+>
+> 🚧 Active Development
+>
+> Last updated: August 2026
+
 > **Nieuwdam** is a long-term cloud engineering project that simulates the design, implementation and management of a modern Microsoft cloud environment for a fictional Belgian municipality.
 >
 > The platform is built using enterprise architecture principles, Microsoft cloud technologies and Infrastructure-as-Code methodologies, with a strong focus on automation, security, governance and maintainability.
@@ -12,11 +18,13 @@
 # 📚 Table of Contents
 
 - [Project Vision](#-project-vision)
+- [Technology Stack](#-technology-stack)
 - [Current Project Status](#-current-project-status)
 - [Environment Statistics](#-environment-statistics)
 - [Platform Architecture](#-platform-architecture)
 - [Identity Automation Framework](#-identity-automation-framework)
 - [Core Features](#-core-features)
+- [Engineering Challenges](#-engineering-challenges)
 - [Security Considerations](#-security-considerations)
 - [Repository Structure](#-repository-structure)
 - [Screenshots](#-screenshots)
@@ -45,6 +53,38 @@ The project focuses on:
 * Creating repeatable deployment workflows
 
 The goal is not only to deploy technology, but to demonstrate the engineering decisions behind building and operating a secure cloud environment.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
+---
+
+# 🛠️ Technology Stack
+
+The Nieuwdam Cloud Platform is built using Microsoft cloud technologies and automation practices commonly used in enterprise environments.
+
+## Current Implementation
+
+| Component | Technology |
+|---|---|
+| Identity Platform | Microsoft Entra ID |
+| API Integration | Microsoft Graph |
+| Automation Framework | PowerShell |
+| Configuration Management | JSON |
+| Reporting | HTML / CSV / JSON |
+| Version Control | GitHub |
+
+## Future Platform Expansion
+
+Planned technologies and capabilities:
+
+| Component | Technology |
+|---|---|
+| Cloud Infrastructure | Microsoft Azure |
+| Infrastructure as Code | Terraform |
+| CI/CD Automation | GitHub Actions |
+| Additional Automation | Python |
+
+The platform architecture is designed to expand from identity automation towards a complete Azure enterprise environment.
 
 [⬆️ Back to Table of Contents](#-table-of-contents)
 
@@ -235,6 +275,46 @@ Each stage can run independently or as part of the complete deployment process.
 
 ---
 
+# 🏗️ Engineering Challenges
+
+Building an identity platform is not only about provisioning users and groups. The project also focuses on solving practical engineering challenges that arise when designing maintainable automation.
+
+Some of the key design decisions include:
+
+## Idempotent Deployments
+
+Deployment scripts are designed to be safely re-executed without creating duplicate objects or inconsistent configurations.
+
+## Separation of Configuration and Logic
+
+All business data (users, groups, role mappings and configuration) is stored separately from the PowerShell implementation, making the platform easier to maintain and extend.
+
+## Modular Architecture
+
+The automation framework is divided into dedicated PowerShell modules, each with a single responsibility such as provisioning, validation, reporting or security.
+
+## Safe Deprovisioning
+
+The platform records deployment state before resources are removed, allowing controlled cleanup instead of deleting objects blindly.
+
+## Validation Before Trust
+
+Every deployment is validated after execution. The validation framework verifies that users, groups and memberships match the intended configuration before reports are generated.
+
+## Reporting & Auditing
+
+Multiple report formats (HTML, CSV and JSON) are generated to provide deployment visibility and support troubleshooting or auditing.
+
+## Extensibility
+
+The project is designed to support future Azure services such as networking, RBAC, Key Vault, monitoring and Infrastructure-as-Code without requiring major architectural changes.
+
+Rather than focusing solely on automation, Nieuwdam aims to demonstrate how enterprise cloud solutions can be designed with maintainability, security and long-term scalability in mind.
+
+[⬆️ Back to Table of Contents](#-table-of-contents)
+
+---
+
 # 🔐 Security Considerations
 
 Security is implemented as an independent architectural capability within the platform design.
@@ -274,6 +354,7 @@ nieuwdam-portal/
 ├── docs/
 │   ├── 01-project-overview.md
 │   ├── 02-architecture.md
+│   ├── 03-engineering-challenges.md
 │   ├── screenshots/
 │   └── testing/
 │
@@ -299,7 +380,14 @@ nieuwdam-portal/
 │
 ├── README.md
 │
-└── terraform/
+├── terraform/
+│   ├── main.tf
+│   ├── network.tf
+│   ├── outputs.tf
+│   ├── providers.tf
+│   ├── rbac.tf
+│   ├── security.tf
+│   └── variables.tf
 ```
 
 The repository is structured around maintainability, scalability and future Azure expansion.
@@ -357,6 +445,13 @@ Current documentation includes:
 * Architecture documentation
 * Testing documentation and future test results
 * Screenshots
+* Engineering challenges and design decisions
+
+For detailed technical documentation:
+
+- [Project Overview](docs/01-project-overview.md)
+- [Architecture Design](docs/02-architecture.md)
+- [Engineering Challenges](docs/03-engineering-challenges.md)
 
 [⬆️ Back to Table of Contents](#-table-of-contents)
 

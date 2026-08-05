@@ -654,55 +654,6 @@ function Add-EntraGroupMembers {
                 -Component "PROVISIONING"
 
 
-
-            # ==================================================
-            # Validate user
-            # ==================================================
-
-            <#$User =
-                $UserLookup[$Entry.UserName]
-
-
-
-            if(-not $User){
-
-
-                Write-Host `
-                    "       FAILED - User not found" `
-                    -ForegroundColor Red
-
-
-
-                Write-Logging `
-                    -Message "FAILED - User not found: $($Entry.UserName)" `
-                    -Level "ERROR" `
-                    -Component "PROVISIONING"
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "Failed"
-
-                        Message = "User not found"
-
-                    }
-                )
-
-
-                continue
-
-            }
-
-
-
             # ==================================================
             # Validate group
             # ==================================================
@@ -915,50 +866,6 @@ function Add-EntraGroupMembers {
             }
 
 
-
-            # ==================================================
-            # DryRun
-            # ==================================================
-
-            <#if($DryRun){
-
-
-                Write-Host `
-                    "       WOULD ADD" `
-                    -ForegroundColor Magenta
-
-
-
-                Write-Logging `
-                    -Message "WOULD ADD MEMBER - $MembershipName" `
-                    -Level "DRYRUN" `
-                    -Component "PROVISIONING"
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "WouldAdd"
-
-                        Message = "DryRun - Membership would be created"
-
-                    }
-                )
-
-
-                continue
-
-            }#>
-
-
-
             # ==================================================
             # Add membership
             # ==================================================
@@ -1088,6 +995,116 @@ function Get-ProvisionState {
 
 }
 
+
+function New-ProvisionState {
+
+    param(
+
+        [Parameter(Mandatory)]
+        [array]$Users,
+
+        [Parameter(Mandatory)]
+        [array]$Groups,
+
+        [Parameter(Mandatory)]
+        [array]$Memberships,
+
+        [Parameter(Mandatory)]
+        [string]$RunId,
+
+        [Parameter(Mandatory)]
+        [string]$StatePath
+
+    )
+
+
+    if(!(Test-Path $StatePath)) {
+
+        New-Item `
+            -Path $StatePath `
+            -ItemType Directory |
+            Out-Null
+
+    }
+
+
+    $Timestamp =
+        Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+
+
+    $StateFile =
+        Join-Path `
+            $StatePath `
+            "provision-state-$Timestamp.json"
+
+
+    $ProvisionState =
+    [PSCustomObject]@{
+
+        RunId =
+            $RunId
+
+        TenantId =
+            (Get-MgContext).TenantId
+
+        Created =
+            (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+
+
+        Counts =
+        [PSCustomObject]@{
+
+            Users =
+                @($Users).Count
+
+            Groups =
+                @($Groups).Count
+
+            Memberships =
+                @($Memberships).Count
+
+        }
+
+
+        Users =
+            @(
+                $Users |
+                Select-Object `
+                    Id,
+                    UserPrincipalName,
+                    DisplayName
+            )
+
+
+        Groups =
+            @(
+                $Groups |
+                Select-Object `
+                    Id,
+                    DisplayName
+            )
+
+
+        Memberships =
+            @(
+                $Memberships
+            )
+
+    }
+
+
+    $ProvisionState |
+    ConvertTo-Json `
+        -Depth 10 |
+    Set-Content `
+        -Path $StateFile `
+        -Encoding UTF8
+
+
+    return $StateFile
+
+}
+
 # ==================================================
 # Export
 # ==================================================
@@ -1096,5 +1113,6 @@ Export-ModuleMember -Function @(
     "New-EntraUsers",
     "New-EntraGroups",
     "Add-EntraGroupMembers",
+    "New-ProvisionState",
     "Get-ProvisionState"
 )

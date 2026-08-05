@@ -160,3 +160,9 @@ obj/
 # =========================
 
 scripts/rollback-newdam.ps1
+
+# =========================
+# Local files
+# =========================
+
+docs/technical-interview-questions.md

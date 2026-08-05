@@ -71,7 +71,11 @@ param(
 
     [Parameter()]
     [switch]
-    $SkipConfirmation
+    $SkipConfirmation,
+
+    [Parameter()]
+    [switch]
+    $SaveState
 
 )
 
@@ -164,266 +168,283 @@ $ScriptStartTime = Get-Date
 try {
 
 
-# ==================================================
-# Initialize logging
-# ==================================================
+    # ==================================================
+    # Initialize logging
+    # ==================================================
 
-Initialize-Logging `
-    -LogFolder $LogPath `
-    -LogName "users" `
-    -DeploymentLogFile $DeploymentLogFile
+    Initialize-Logging `
+        -LogFolder $LogPath `
+        -LogName "users" `
+        -DeploymentLogFile $DeploymentLogFile
 
-Write-Logging `
-    -Message (
-        "User provisioning started. RunId: {0}" `
-        -f `
-        $RunId
-    ) `
-    -Level INFO `
-    -Component "SYSTEM"
-
-
-# ==================================================
-# Connect Microsoft Graph
-# ==================================================
-
-<#if (-not $UseExistingGraphConnection) {
-
-    Connect-EntraGraph `
-        -AuthenticationMode Interactive
-
-}#>
-
-if($UseExistingGraphConnection){
-
-    Write-Message `
-        -Status PASS `
-        -Message "Using existing Microsoft Graph connection." `
-        -Component GRAPH
-
-}
-else {
-
-    Connect-EntraGraph `
-        -AuthenticationMode Interactive
-
-}
-
-# ==================================================
-# Confirm live deployment
-# ==================================================
-
-if (-not $DryRun -and -not $SkipConfirmation) {
-
-    Confirm-LiveDeployment `
-        -Operations @(
-            "Create Microsoft Entra ID users"
-        )
-
-}
-
-# ==================================================
-# Load configuration
-# ==================================================
-
-Write-Host ""
-
-Write-Status `
-    -Status "INFO" `
-    -Message "Loading user configuration..."
-
-$Users =
-Get-UserConfiguration `
-    -ConfigFolder $ConfigPath
-
-$TenantConfiguration =
-Get-TenantConfiguration `
-    -ConfigFolder $ConfigPath
+    Write-Logging `
+        -Message (
+            "User provisioning started. RunId: {0}" `
+            -f `
+            $RunId
+        ) `
+        -Level INFO `
+        -Component "SYSTEM"
 
 
-# ==================================================
-# Load existing Entra ID objects
-# ==================================================
+    # ==================================================
+    # Connect Microsoft Graph
+    # ==================================================
 
-Write-Host ""
+    if($UseExistingGraphConnection){
 
-<#Write-Status `
-    -Status "INFO" `
-    -Message "Loading existing Entra ID users..."#>
+        Write-Message `
+            -Status PASS `
+            -Message "Using existing Microsoft Graph connection." `
+            -Component GRAPH
 
-<#$DirectoryCache =
-Initialize-GraphCache#>
+    }
+    else {
 
-if ($UseExistingGraphCache) {
+        Connect-EntraGraph `
+            -AuthenticationMode Interactive
 
-    Write-Message `
-        -Status PASS `
-        -Message "Using existing Graph cache." `
-        -Component GRAPH
+    }
 
-    $DirectoryCache = Get-GraphCache
+    # ==================================================
+    # Confirm live deployment
+    # ==================================================
 
-}
-else {
+    if (-not $DryRun -and -not $SkipConfirmation) {
+
+        Confirm-LiveDeployment `
+            -Operations @(
+                "Create Microsoft Entra ID users"
+            )
+
+    }
+
+    # ==================================================
+    # Load configuration
+    # ==================================================
+
+    Write-Host ""
 
     Write-Status `
-        -Status INFO `
-        -Message "Loading existing Entra ID users..."
+        -Status "INFO" `
+        -Message "Loading user configuration..."
 
-    $DirectoryCache = Initialize-GraphCache
+    $Users =
+    Get-UserConfiguration `
+        -ConfigFolder $ConfigPath
 
-}
-
-$GraphUsers =
-$DirectoryCache.Users
-
-$UsersBefore = $GraphUsers.Count
-
-
-# ==================================================
-# Provision users
-# ==================================================
-
-Write-Host ""
-
-if ($DryRun) {
-
-    Write-Status `
-        -Status "WARNING" `
-        -Message "Running in DRY RUN mode. No changes will be applied."
-
-}
-
-$Results =
-@(New-EntraUsers `
-        -ConfigUsers $Users `
-        -GraphUsers $GraphUsers `
-        -InitialPassword $TenantConfiguration.InitialPassword `
-        -DryRun:$DryRun)
+    $TenantConfiguration =
+    Get-TenantConfiguration `
+        -ConfigFolder $ConfigPath
 
 
-# ==================================================
-# Reload Entra ID users after provisioning
-# ==================================================
+    # ==================================================
+    # Load existing Entra ID objects
+    # ==================================================
 
-$DirectoryCacheAfter =
-Initialize-GraphCache -Silent -Refresh
+    Write-Host ""
 
-$UsersAfter =
-$DirectoryCacheAfter.Users.Count
+    if ($UseExistingGraphCache) {
 
-# ==================================================
-# Summary
-# ==================================================
+        Write-Message `
+            -Status PASS `
+            -Message "Using existing Graph cache." `
+            -Component GRAPH
 
-$CreatedCount =
-Get-ResultCount `
-    -Results $Results `
-    -Action "Created"
+        $DirectoryCache = Get-GraphCache
 
-$WouldCreateCount =
-Get-ResultCount `
-    -Results $Results `
-    -Action "WouldCreate"
-
-$SkippedCount =
-Get-ResultCount `
-    -Results $Results `
-    -Action "Skipped"
-
-$FailedCount =
-Get-ResultCount `
-    -Results $Results `
-    -Action "Failed"
-
-
-Write-ProvisioningSummary `
-    -Title "User Provisioning Summary" `
-    -Summary @{
-        Created = $CreatedCount
-        "Would Create" = $WouldCreateCount
-        Skipped = $SkippedCount
-        Failed = $FailedCount
     }
+    else {
 
+        Write-Status `
+            -Status INFO `
+            -Message "Loading existing Entra ID users..."
 
-# ==================================================
-# Output results
-# ==================================================
-
-if ($ShowDetails) {
-
-    $Results |
-    Format-Table Timestamp, Type, Name, Action
-
-}
-
-
-# ==================================================
-# Logging
-# ==================================================
-
-Write-Logging `
-    -Message (
-    "User provisioning completed. UsersBefore: {0}, Created: {1}, WouldCreate: {2}, Skipped: {3}, Failed: {4}, UsersAfter: {5}" `
-        -f `
-        $UsersBefore,
-        $CreatedCount,
-        $WouldCreateCount,
-        $SkippedCount,
-        $FailedCount,
-        $UsersAfter
-) `
-    -Level "PASS" `
-    -Component "SYSTEM"
-
-$ProvisioningResult = [PSCustomObject]@{
-
-    RunId = $RunId
-
-    Summary = [PSCustomObject]@{
-
-        UsersBefore = $UsersBefore
-        UsersAfter  = $UsersAfter
-
-        Created     = $CreatedCount
-        WouldCreate = $WouldCreateCount
-        Skipped     = $SkippedCount
-        Failed      = $FailedCount
+        $DirectoryCache = Initialize-GraphCache
 
     }
 
-    Results = @($Results)
+    $GraphUsers =
+    $DirectoryCache.Users
 
-}
-
-
-Write-RunCompleted `
-    -StartTime $ScriptStartTime `
-    -RunId $RunId `
-    -Processed $Users.Count
+    $UsersBefore = $GraphUsers.Count
 
 
-if ($PassThru) {
+    # ==================================================
+    # Provision users
+    # ==================================================
 
-    return $ProvisioningResult
+    Write-Host ""
 
-}
+    if ($DryRun) {
 
-<#if ($PassThru) {
-
-    return [PSCustomObject]@{
-
-        Summary = $ProvisioningResult
-
-        Results = $Results
+        Write-Status `
+            -Status "WARNING" `
+            -Message "Running in DRY RUN mode. No changes will be applied."
 
     }
 
-}#>
+    $Results =
+    @(New-EntraUsers `
+            -ConfigUsers $Users `
+            -GraphUsers $GraphUsers `
+            -InitialPassword $TenantConfiguration.InitialPassword `
+            -DryRun:$DryRun)
 
+
+    # ==================================================
+    # Reload Entra ID users after provisioning
+    # ==================================================
+
+    $DirectoryCacheAfter =
+    Initialize-GraphCache -Silent -Refresh
+
+    $UsersAfter =
+    $DirectoryCacheAfter.Users.Count
+
+    # ==================================================
+    # Collect newly created users
+    # ==================================================
+
+    $ProvisionedUsers =
+        $Results |
+        Where-Object Action -eq "Created"
+
+    $CreatedUsers =
+        foreach($User in $ProvisionedUsers){
+
+            $DirectoryCacheAfter.Users |
+            Where-Object {
+                $_.Id -eq $User.ObjectId
+            }
+
+        }
+
+    # ==================================================
+    # Summary
+    # ==================================================
+
+    $CreatedCount =
+    Get-ResultCount `
+        -Results $Results `
+        -Action "Created"
+
+    $WouldCreateCount =
+    Get-ResultCount `
+        -Results $Results `
+        -Action "WouldCreate"
+
+    $SkippedCount =
+    Get-ResultCount `
+        -Results $Results `
+        -Action "Skipped"
+
+    $FailedCount =
+    Get-ResultCount `
+        -Results $Results `
+        -Action "Failed"
+
+
+    Write-ProvisioningSummary `
+        -Title "User Provisioning Summary" `
+        -Summary @{
+            Created = $CreatedCount
+            "Would Create" = $WouldCreateCount
+            Skipped = $SkippedCount
+            Failed = $FailedCount
+        }
+
+
+    # ==================================================
+    # Output results
+    # ==================================================
+
+    if ($ShowDetails) {
+
+        $Results |
+        Format-Table Timestamp, Type, Name, Action
+
+    }
+
+
+    # ==================================================
+    # Logging
+    # ==================================================
+
+    Write-Logging `
+        -Message (
+        "User provisioning completed. UsersBefore: {0}, Created: {1}, WouldCreate: {2}, Skipped: {3}, Failed: {4}, UsersAfter: {5}" `
+            -f `
+            $UsersBefore,
+            $CreatedCount,
+            $WouldCreateCount,
+            $SkippedCount,
+            $FailedCount,
+            $UsersAfter
+        ) `
+        -Level "PASS" `
+        -Component "SYSTEM"
+
+    $ProvisioningResult = [PSCustomObject]@{
+
+        RunId = $RunId
+
+        Summary = [PSCustomObject]@{
+
+            UsersBefore = $UsersBefore
+            UsersAfter  = $UsersAfter
+
+            Created     = $CreatedCount
+            WouldCreate = $WouldCreateCount
+            Skipped     = $SkippedCount
+            Failed      = $FailedCount
+
+        }
+
+        Results = @($Results)
+
+    }
+
+
+    Write-RunCompleted `
+        -StartTime $ScriptStartTime `
+        -RunId $RunId `
+        -Processed $Users.Count
+
+
+    # ==================================================
+    # Save Provision State
+    # ==================================================
+
+    if($SaveState -and -not $DryRun){
+
+        $CreatedUsers = @($CreatedUsers)
+
+        $StateFile =
+            New-ProvisionState `
+                -Users $CreatedUsers `
+                -Groups @() `
+                -Memberships @() `
+                -RunId $RunId `
+                -StatePath (
+                    Join-Path $RootPath "state"
+                )
+
+            Write-Status `
+                -Status PASS `
+                -Message "Provision state saved: $StateFile"
+
+    }
+
+
+    if ($PassThru) {
+
+        return $ProvisioningResult
+
+    }
 
 }
+
 catch {
 
     Write-Host ""
