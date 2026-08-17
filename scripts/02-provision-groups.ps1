@@ -236,24 +236,6 @@ $TenantConfiguration =
 Get-TenantConfiguration `
     -ConfigFolder $ConfigPath
 
-# ==================================================
-# Load existing Entra ID objects
-# ==================================================
-
-<#Write-Host ""
-
-Write-Status `
-    -Status "INFO" `
-    -Message "Loading existing Entra ID groups..." `
-    
-
-$DirectoryCache =
-Initialize-GraphCache
-
-$GraphGroups =
-$DirectoryCache.Groups
-
-$GroupsBefore = $GraphGroups.Count#>
 
 # ==================================================
 # Load existing Entra ID objects

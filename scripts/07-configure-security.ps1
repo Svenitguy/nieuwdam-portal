@@ -9,14 +9,13 @@
 
     Steps:
 
-    1. Load Security module
-    2. Configure password policies
-    3. Configure authentication methods
-    4. Configure MFA
-    5. Create Conditional Access policies
-    6. Validate Security Defaults
-    7. Validate Break-glass accounts
-    8. Generate security report
+    1. Configure password policies
+    2. Configure authentication methods
+    3. Configure MFA
+    4. Create Conditional Access policies
+    5. Validate Security Defaults
+    6. Validate Break-glass accounts
+    7. Generate security report
 
 
 .PARAMETER DryRun
@@ -64,7 +63,15 @@ param(
     $DeploymentLogFile,
 
     [string]
-    $RunId
+    $RunId,
+
+    [Parameter()]
+    [switch]
+    $UseExistingGraphConnection,
+
+    [switch]
+    $CreateMissingBreakGlass
+
 
 )
 
@@ -118,6 +125,8 @@ $RequiredModules = @(
 
     "$ModuleRoot\Logging\Logging.psm1"
 
+    "$ModuleRoot\Helpers\Helpers.psm1"
+
     "$ModuleRoot\Configuration\Configuration.psm1"
 
     "$ModuleRoot\Graph\Graph.psm1"
@@ -147,79 +156,124 @@ foreach($Module in $RequiredModules){
 
 }
 
-# ==================================================
-# Initialize Logging
-# ==================================================
-
-$LogFolder =
-Join-Path `
-    $ScriptRoot `
-    "..\logs"
-
-
-Initialize-Logging `
-    -LogFolder $LogFolder `
-    -LogName "security"
-
-
-# ==================================================
-# Security Execution
-# ==================================================
 
 try {
 
+    # ==================================================
+    # Initialize Logging
+    # ==================================================
 
-    Write-Message `
-        -Status "INFO" `
-        -Message "Starting security configuration." `
-        -Component "SECURITY"
+    $LogFolder =
+    Join-Path `
+        $ScriptRoot `
+        "..\logs"
 
 
+    Initialize-Logging `
+        -LogFolder $LogFolder `
+        -LogName "security" `
+        -DeploymentLogFile $DeploymentLogFile
 
-    if($DryRun){
 
+    # ==================================================
+    # Connect Microsoft Graph
+    # ==================================================
+
+    if($UseExistingGraphConnection){
 
         Write-Message `
-            -Status "DRYRUN" `
-            -Message "Security configuration running in simulation mode." `
-            -Component "SECURITY"
+            -Status PASS `
+            -Message "Using existing Microsoft Graph connection." `
+            -Component GRAPH
 
+        Write-Host ""
+
+    }
+    else{
+
+        Connect-EntraGraph `
+            -AuthenticationMode Interactive
 
     }
 
-
-    $SecurityResults = @()
-
-   
-    if(!$DryRun){
-
-        Connect-EntraGraph
-
-    }
 
     # --------------------------------------------------
     # Load Security Configuration
     # --------------------------------------------------
 
+    Write-Message `
+        -Status "INFO" `
+        -Message "Loading security configuration..." `
+        -Component "SECURITY"
+
+
     $SecurityConfiguration =
         Get-SecurityConfiguration `
             -ConfigFolder $ConfigFolder
 
+    $CAPolicyCount = @(
+        $SecurityConfiguration.ConditionalAccess.Policies
+    ).Count
+
+
+    Write-Message `
+        -Status "PASS" `
+        -Message (
+            "Security configuration loaded. Conditional Access policies: {0}" -f
+            $CAPolicyCount
+        ) `
+        -Component "SECURITY"
+
+    if($DryRun){
+
+        Write-Message `
+            -Status "WARNING" `
+            -Message "Running in DRY RUN mode. No changes will be applied." `
+            -Component "SECURITY"
+
+    }
+
+
+
+    Write-Host ""
+
+    Write-Host "Starting security configuration..."
+
+    Write-Host ""
+
+
+    $SecurityResults = @()
 
     # --------------------------------------------------
     # Password Policy
     # --------------------------------------------------
+
+    Write-Host ""
+
+    Write-Host "[1/7] Password Policy"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD CONFIGURE"}else{"CONFIGURE"})
+    )
 
     $SecurityResults +=
         Set-PasswordPolicy `
             -Configuration $SecurityConfiguration.PasswordPolicy `
             -DryRun:$DryRun
 
-
-
     # --------------------------------------------------
     # Authentication Methods
     # --------------------------------------------------
+
+    Write-Host ""
+
+    Write-Host "[2/7] Authentication Methods"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD CONFIGURE"}else{"CONFIGURE"})
+    )
 
     $SecurityResults +=
         Set-AuthenticationMethods `
@@ -232,26 +286,92 @@ try {
     # MFA
     # --------------------------------------------------
 
+    Write-Host ""
+
+    Write-Host "[3/7] MFA Configuration"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD CONFIGURE"}else{"CONFIGURE"})
+    )
+
     $SecurityResults +=
         Set-MFAConfiguration `
             -DryRun:$DryRun `
             -Configuration $SecurityConfiguration.MFA
 
+    # --------------------------------------------------
+    # Break Glass Accounts
+    # --------------------------------------------------
 
+    Write-Host ""
+
+    Write-Host "[4/7] Break Glass Accounts"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD VALIDATE"}else{"VALIDATE"})
+    )
+
+    $BreakGlassResult =
+        New-BreakGlassAccounts `
+            -Configuration $SecurityConfiguration.BreakGlassAccounts `
+            -DryRun:$DryRun `
+            -CreateMissing:$CreateMissingBreakGlass
+
+    $SecurityResults +=
+        [PSCustomObject]@{
+
+            Component = "BreakGlassAccounts"
+
+            Status =
+                $BreakGlassResult.Status
+
+            RequiredCount =
+                $BreakGlassResult.RequiredCount
+
+            FoundCount =
+                $BreakGlassResult.FoundCount
+
+            MissingCount =
+                $BreakGlassResult.MissingCount
+
+            ObjectIds =
+                $BreakGlassResult.ObjectIds
+
+        }
 
     # --------------------------------------------------
     # Conditional Access
     # --------------------------------------------------
 
+    Write-Host ""
+
+    Write-Host "[5/7] Conditional Access Policies"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD CREATE"}else{"CREATE"})
+    )
+
     $SecurityResults +=
         New-ConditionalAccessPolicies `
             -DryRun:$DryRun `
-            -Configuration $SecurityConfiguration.ConditionalAccess
-
+            -Configuration $SecurityConfiguration.ConditionalAccess `
+            -BreakGlassConfiguration $BreakGlassResult
 
     # --------------------------------------------------
     # Security Defaults
     # --------------------------------------------------
+
+    Write-Host ""
+
+    Write-Host "[6/7] Security Defaults"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD VALIDATE"}else{"VALIDATE"})
+    )
 
     $SecurityResults +=
         Test-SecurityDefaults `
@@ -264,14 +384,20 @@ try {
     # Break Glass Accounts
     # --------------------------------------------------
 
+    <#Write-Host ""
+
+    Write-Host "[7/7] Break Glass Accounts"
+
+    Write-Host (
+        "       {0}" -f
+        $(if($DryRun){"WOULD VALIDATE"}else{"VALIDATE"})
+    )
+
     $SecurityResults +=
         Test-BreakGlassAccounts `
             -DryRun:$DryRun `
-            -Configuration $SecurityConfiguration.BreakGlassAccounts
+            -Configuration $SecurityConfiguration.BreakGlassAccounts#>
 
-# --------------------------------------------------
-# Build Results from Security Module Output
-# --------------------------------------------------
 
 # --------------------------------------------------
 # Build Results from Security Module Output
@@ -299,6 +425,73 @@ foreach($Item in $SecurityResults){
             -Results $Results `
             -RunId $RunId `
             -DryRun:$DryRun
+
+    # --------------------------------------------------
+    # Security Summary
+    # --------------------------------------------------
+
+    $Summary = @{
+
+        PasswordPolicy =
+            if($DryRun){"WouldConfigure"}else{"Configured"}
+
+        Authentication =
+            if($DryRun){"WouldConfigure"}else{"Configured"}
+
+        MFA =
+            if($DryRun){"WouldConfigure"}else{"Configured"}
+
+        ConditionalAccess =
+            if($DryRun){"WouldCreate"}else{"Configured"}
+
+        SecurityDefaults =
+            if($DryRun){"WouldValidate"}else{"Validated"}
+
+        BreakGlassAccounts =
+            if($DryRun){"WouldValidate"}else{"Validated"}
+
+    }
+
+    $SecurityDisplayOrder = @(
+        "PasswordPolicy",
+        "Authentication",
+        "MFA",
+        "ConditionalAccess",
+        "SecurityDefaults",
+        "BreakGlassAccounts"
+    )
+
+
+    Write-Host ""
+
+    Write-Host `
+        "==============================================" `
+        -ForegroundColor Cyan
+
+    Write-Host `
+        " Security Configuration Summary" `
+        -ForegroundColor Cyan
+
+    Write-Host `
+        "==============================================" `
+        -ForegroundColor Cyan
+
+
+    foreach($Item in $SecurityDisplayOrder){
+
+        if($Summary.ContainsKey($Item)){
+
+            Write-Host (
+                "{0,-20}: {1}" -f
+                $Item,
+                $Summary[$Item]
+        )
+
+        }
+
+    }
+
+
 
 
 

@@ -443,54 +443,52 @@ This diagram represents the logical relationships between the primary architectu
 
 The platform is organized into logical architectural layers.
 
-Each layer performs a distinct function and communicates only with adjacent layers. This layered organization provides a predictable execution model while keeping implementation responsibilities separated.
+Each layer performs a distinct function and communicates through defined interfaces with the components required to perform its responsibility. The architecture minimizes unnecessary cross-layer dependencies while allowing shared operational services such as logging, state management and reporting to be used by multiple execution components. This layered organization provides a predictable execution model while keeping implementation responsibilities separated.
 
 The architectural layers are shown below.
 
 ```text
-Presentation Layer
-
-        │
-
-        ▼
-
-Configuration Layer
-
-        │
-
-        ▼
-
-Automation Layer
-
-        │
-
-        ▼
-
-Microsoft Graph Layer
-
-        │
-
-        ▼
-
-Microsoft Entra ID Layer
-
-        │
-
-        ▼
-
-Operational Services Layer
+                    Presentation / Entry Layer
+                              │
+                              ▼
+                       Orchestration Layer
+                              │
+                              ▼
+                     Configuration Layer
+                              │
+                              ▼
+                      Automation Layer
+                    ┌─────────┼─────────┐
+                    │         │         │
+                    ▼         ▼         ▼
+              Provisioning  Security  Validation
+                    │         │         │
+                    └─────────┼─────────┘
+                              │
+                              ▼
+                    Microsoft Graph Layer
+                              │
+                              ▼
+                    Microsoft Entra ID
+                              
+                 ┌─────────────────────────┐
+                 │   Operational Services  │
+                 │                         │
+                 │ Logging / State / Report│
+                 └─────────────────────────┘
 ```
 
 Each layer contains one or more architectural components.
 
 | Layer | Primary Responsibility |
 |--------|------------------------|
-| Presentation Layer | Provides administrator entry points through deployment scripts |
-| Configuration Layer | Supplies deployment data from configuration files |
-| Automation Layer | Executes provisioning, validation, reporting and supporting operations |
+| Presentation / Entry Layer | Provides administrator entry points through deployment scripts |
+| Orchestration Layer | Coordinates deployment workflows and execution order |
+| Configuration Layer | Supplies and validates deployment configuration |
+| Automation Layer | Executes provisioning, security, validation and lifecycle operations |
 | Microsoft Graph Layer | Provides authenticated communication with Microsoft Graph |
-| Microsoft Entra ID Layer | Hosts identity resources managed by the platform |
-| Operational Services Layer | Stores deployment state and produces operational reports |
+| Microsoft Entra ID Layer | Hosts the identity resources managed by the platform |
+| Operational Services Layer | Provides logging, state persistence and reporting capabilities |
 
 The following chapters describe the implementation of each layer in detail.
 
@@ -523,9 +521,20 @@ Subsequent chapters describe the implementation and responsibilities of each com
 
 ## 2.4 Deployment Lifecycle
 
-Every deployment follows the same execution sequence regardless of the resources being processed.
+The Nieuwdam Cloud Platform uses controlled lifecycle paths for both deployment and deprovisioning operations.
 
-The deployment lifecycle coordinates the interaction between the architectural components from the moment deployment starts until operational results have been generated.
+The platform distinguishes between two primary operational workflows:
+
+- Standard Deployment
+- Deprovisioning
+
+Dry Run execution is supported as a simulation mode for both workflows.
+
+The Standard Deployment workflow creates and validates the desired Microsoft Entra ID environment and records the resulting provision state.
+
+The Deprovisioning workflow uses a previously recorded and validated provision state to identify and remove resources that were provisioned by the platform.
+
+### Standard Deployment Lifecycle
 
 ```text
 Administrator
@@ -534,49 +543,55 @@ Administrator
 
         ▼
 
-deploy-environment.ps1
+Deployment Orchestrator
 
         │
 
         ▼
 
-Load Configuration
+Initialize Execution Context
 
         │
 
         ▼
 
-Connect Microsoft Graph
+Load and Validate Configuration
 
         │
 
         ▼
 
-Execute Provisioning
+Connect to Microsoft Graph
 
         │
 
         ▼
 
-Execute Security Configuration
+Execute Provisioning and Security Operations
 
         │
 
         ▼
 
-Validate Environment
+Validate Resulting Environment
 
         │
 
         ▼
 
-Store Deployment State
+Validation PASSED
 
         │
 
         ▼
 
-Generate Reports
+Save Provision State
+
+        │
+
+        ▼
+
+Generate Operational Reports
 
         │
 
@@ -585,9 +600,136 @@ Generate Reports
 Deployment Complete
 ```
 
-Each phase invokes one or more specialized components responsible for performing the required operations.
+The provision state is created only after the deployment has successfully passed validation.
 
-The implementation details of every deployment phase are documented in the dedicated architecture chapters later in this guide.
+### Deprovisioning Lifecycle
+
+```text
+Recorded Provision State
+
+        │
+
+        ▼
+
+Deprovisioning Script
+
+        │
+
+        ▼
+
+Load and Validate Provision State
+
+        │
+
+        ▼
+
+Resolve Recorded Resources
+
+        │
+
+        ▼
+
+Remove Group Memberships
+
+        │
+
+        ▼
+
+Remove Groups
+
+        │
+
+        ▼
+
+Remove Users
+
+        │
+
+        ▼
+
+Collect Deprovisioning Results
+
+        │
+
+        ▼
+
+Generate Operational Reports
+
+        │
+
+        ▼
+
+Deprovisioning Complete
+```
+
+The deprovisioning workflow is operationally independent from the standard provisioning workflow, but uses the provision state produced by a previously validated deployment as its authoritative input.
+
+It uses the provision state generated by a previously validated deployment as the authoritative input for resource removal.
+
+Resources are removed in dependency-aware order:
+
+```text
+Group Memberships
+        ↓
+Groups
+        ↓
+Users
+```
+
+This dependency-aware order ensures that group membership relationships are removed before the associated groups and users are removed.
+
+### Dry Run
+
+Dry Run provides a simulation mode for both lifecycle paths.
+
+During a Dry Run, the platform evaluates the same configuration, environment state and planned operations as a normal execution, but does not perform Microsoft Graph write operations.
+
+The execution mode is recorded explicitly so that simulation results remain distinguishable from actual deployment or deprovisioning results.
+
+The lifecycle model can therefore be summarized as:
+
+```text
+                  ┌──────────────────────┐
+                  │      Deployment      │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                       Provisioning
+                             │
+                             ▼
+                        Validation
+                             │
+                       PASSED │
+                             ▼
+                    Provision State
+                             │
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+                    ▼                 │
+              Operational             │
+               Reporting              │
+                                      │
+                                      │
+                         Later / On Demand
+                                      │
+                                      ▼
+                             Deprovisioning
+                                      │
+                                      ▼
+                               Memberships
+                                      │
+                                      ▼
+                                  Groups
+                                      │
+                                      ▼
+                                   Users
+                                      │
+                                      ▼
+                                 Reporting
+```
+
+This lifecycle model provides a controlled relationship between provisioning, validation, state management and deprovisioning while keeping each operational workflow independently executable.
 
 [⬆ Back to Table of Contents](#table-of-contents)
 
@@ -601,7 +743,9 @@ Unlike the PowerShell modules, which contain the implementation logic, the scrip
 
 Each script has a single operational responsibility and follows the same execution principles, including standardized logging, centralized error handling and consistent result reporting.
 
-The platform currently contains seven operational scripts together with one deployment orchestrator.
+The platform currently contains seven operational scripts and one deployment orchestrator.
+
+The deployment orchestrator provides the primary entry point for complete deployments, while the operational scripts provide dedicated entry points for individual deployment, validation, state management, deprovisioning and security operations.
 
 ---
 
@@ -936,7 +1080,9 @@ This approach provides several advantages:
 - Environment-specific customization
 - Easier change management
 
-The configuration layer therefore acts as the single source of truth for every deployment.
+The configuration layer acts as the source of truth for the desired deployment state.
+
+Microsoft Entra ID remains the authoritative source for the actual directory state, which is evaluated during provisioning and validation.
 
 ---
 
@@ -954,7 +1100,6 @@ config/
 ├── group-memberships.json
 ├── security.json
 ├── conditional-access.json
-├── cleanup.json
 └── tenant.json
 ```
 
@@ -975,7 +1120,6 @@ The configuration layer is divided into several logical domains.
 | group-memberships.json | User-to-group assignments |
 | security.json | General security configuration |
 | conditional-access.json | Conditional Access policy configuration |
-| cleanup.json | Resources targeted for deprovisioning |
 | tenant.json | Tenant-specific platform settings |
 
 Each configuration domain is loaded only when required by the corresponding automation component.
@@ -1012,7 +1156,11 @@ Automation Components
 
 During processing, configuration files are loaded, validated and converted into PowerShell objects that are used throughout the deployment.
 
-No deployment operations are performed until configuration processing has completed successfully.
+No provisioning or security operations are performed until configuration processing has completed successfully.
+
+Deprovisioning is based on a previously recorded provision state rather than the standard deployment configuration files.
+
+Dry Run execution may continue into evaluation and planning stages without performing Microsoft Entra ID write operations.
 
 ---
 
@@ -1056,7 +1204,7 @@ By treating configuration as an independent architectural layer, the platform re
 
 The Provisioning Architecture is responsible for translating the desired identity configuration into Microsoft Entra ID resources.
 
-It forms the execution layer responsible for creating, updating and maintaining identity objects based on the configuration supplied by the Configuration module.
+It forms the execution layer responsible for creating and maintaining identity objects based on the configured desired state. Existing resources are detected before creation to prevent unnecessary duplicate objects.
 
 Provisioning follows an idempotent deployment model, ensuring that repeated executions always produce a consistent and predictable result.
 
@@ -1271,9 +1419,10 @@ Its responsibilities include:
 
 - Password policy configuration
 - Authentication method configuration
-- Multi-Factor Authentication deployment
+- Multi-Factor Authentication enforcement configuration
 - Conditional Access deployment
 - Emergency access account validation
+- Conditional Access exclusion validation for emergency access accounts
 - Security Defaults validation
 - Security result generation
 - Dry Run support
@@ -1322,6 +1471,14 @@ Before policies are deployed, the Security module verifies that the tenant suppo
 
 If the required licensing is unavailable, deployment is skipped safely while recording the appropriate operational results.
 
+### Security Defaults and Conditional Access
+
+Security Defaults and Conditional Access are treated as alternative security control models for tenant-level access protection.
+
+Where the platform deploys a Conditional Access policy baseline, the deployment must ensure that the tenant's Security Defaults configuration is compatible with that model. The platform must not assume that Security Defaults and a full Conditional Access baseline can be independently enabled without considering their interaction.
+
+The selected security model is therefore determined by the security configuration and validated as part of the security deployment process.
+
 ---
 
 ## 7.5 Security Validation
@@ -1339,6 +1496,12 @@ Typical validation includes:
 - Emergency access accounts
 
 Validation results are returned as standardized result objects that can be consumed by the Reporting Architecture.
+
+Emergency access account validation verifies that the configured emergency access accounts remain available for emergency recovery scenarios.
+
+Where Conditional Access policies are deployed, the validation process also verifies that designated emergency access accounts are excluded from policies that could prevent emergency sign-in.
+
+The platform treats emergency access accounts as a recovery control and does not include them in automated cleanup operations.
 
 ---
 
@@ -1420,6 +1583,10 @@ The Validation module is designed around the following principles:
 - Efficient directory comparison
 
 The module does not contain deployment logic and does not create, modify or remove Microsoft Entra ID resources.
+
+Security-specific validation remains within the Security module because these checks are tightly coupled to security configuration and Conditional Access behaviour.
+
+The Validation module is responsible for general identity resource validation, including users, groups and group memberships.
 
 ---
 
@@ -1505,8 +1672,18 @@ PASS
 
 FAIL
 
-MISSING
+NOT_FOUND
+
+ERROR
+
+SKIPPED
 ```
+
+`NOT_FOUND` indicates that the expected resource or relationship could not be located.
+
+`ERROR` indicates that validation could not be completed successfully.
+
+`SKIPPED` indicates that a validation check was intentionally not executed because its prerequisites were not satisfied.
 
 A successful validation confirms that the configured user object is available in the directory environment.
 
@@ -1700,6 +1877,8 @@ The module is responsible for:
 The Reporting module does not perform identity operations and does not modify Microsoft Entra ID resources.
 
 Its responsibility is limited to transforming collected information into usable reporting formats.
+
+The Reporting module is a presentation and transformation component. It does not determine whether a deployment succeeds or fails; those decisions are produced by the execution and validation components.
 
 ---
 
@@ -1947,35 +2126,31 @@ Execution status
 Result information
 ```
 
-The stored information provides a complete overview of the execution outcome without requiring the original deployment process to be repeated.
+The stored information provides a structured operational overview of the execution outcome without requiring the original deployment process to be repeated.
 
 ---
 
 ## 10.4 State Storage Structure
 
-Deployment state information is stored separately from automation logic.
+Deployment state information is stored as structured JSON files within the `state/` directory.
 
 Example structure:
 
 ```text
 state/
 
-├── deployment-state-history/
+├── provision-state-<timestamp>.json
 
-│   ├── deployment-state-001.json
+├── provision-state-<timestamp>.json
 
-│   ├── deployment-state-002.json
-
-│
-
-└── deployment-state-latest.json
+└── provision-state-<timestamp>.json
 ```
 
-Each state file represents an individual execution result.
+Each state file represents the recorded result of a validated provisioning execution.
 
-The latest state file provides a current operational reference, while historical files preserve previous deployment information.
+The state files provide a historical record of the resources and deployment information produced by the platform.
 
-This structure supports review, comparison and troubleshooting of previous automation executions.
+The recorded provision state can subsequently be used as the reference for controlled deprovisioning operations.
 
 ---
 
@@ -1984,37 +2159,39 @@ This structure supports review, comparison and troubleshooting of previous autom
 State information follows a controlled lifecycle.
 
 ```text
-Deployment Execution
+## 10.5 State Lifecycle
 
+State information follows a controlled lifecycle.
+
+```text
+Provisioning Execution
         |
-
         v
-
-Execution Results
-
+Environment Validation
         |
-
         v
-
-State Generation
-
+Validation PASSED
         |
-
         v
-
+05-save-provision-state.ps1
+        |
+        v
+Provision State Generation
+        |
+        v
 State Storage
-
         |
-
         v
-
-Operational Review
+Future Deprovisioning
 ```
 
-During execution, automation components generate operational results.
+Provision state is created only after the deployment validation process has completed successfully.
 
-After processing is completed, these results are collected and written into a persistent state representation.
+`05-save-provision-state.ps1` records the validated deployment state in a provision state file.
 
+This state file subsequently serves as the input for `06-deprovision-environment.ps1`.
+
+This creates a controlled lifecycle relationship between provisioning, validation, state recording and deprovisioning.
 ---
 
 ## 10.6 State Tracking Model
@@ -2096,9 +2273,11 @@ The deprovisioning script coordinates the execution flow required for resource c
 
 Its responsibilities include:
 
-- Loading cleanup definitions
+- Loading the provision state
 - Preparing the execution environment
-- Processing removal requests
+- Resolving recorded resources
+- Processing removal operations
+- Removing resources in dependency-aware order
 - Recording cleanup results
 - Providing operational feedback
 
@@ -2106,28 +2285,35 @@ The script acts as the controlled interface for initiating deprovisioning operat
 
 ---
 
-## 11.3 Cleanup Configuration
+## 11.3 Deprovisioning Source
 
-Deprovisioning actions are controlled through dedicated configuration data.
+Deprovisioning operations are based on the deployment state recorded by the platform rather than a separate cleanup configuration file.
+
+After a deployment has been successfully validated, the state management process records the resulting deployment state in the `state/` directory.
 
 Example:
 
 ```text
-config/
+state/
 
-└── cleanup.json
+└── provision-state-<timestamp>.json
 ```
 
-The cleanup configuration defines which resources are eligible for removal.
+The provision state records the resources that were successfully provisioned and validated as part of the deployment.
 
-This configuration-based approach provides:
+`06-deprovision-environment.ps1` uses this provision state as the authoritative input for controlled deprovisioning.
 
-- Controlled resource targeting
-- Reviewable cleanup changes
-- Repeatable cleanup operations
-- Separation between cleanup decisions and execution logic
+This creates a direct relationship between a provisioning execution and its subsequent deprovisioning operation.
 
-Removal actions are therefore determined by configuration rather than embedded directly within automation code.
+The state-based approach provides:
+
+- Traceable resource targeting
+- A direct relationship between provisioning and deprovisioning
+- Reduced risk of removing unmanaged resources
+- Deployment-specific resource ownership
+- Auditable cleanup operations
+
+Deprovisioning therefore does not rely on a separate `cleanup.json` configuration file.
 
 ---
 
@@ -2136,7 +2322,7 @@ Removal actions are therefore determined by configuration rather than embedded d
 The deprovisioning lifecycle follows a controlled sequence:
 
 ```text
-Cleanup Configuration
+Recorded Provision State
 
         |
 
@@ -2149,6 +2335,12 @@ Deprovisioning Script
         v
 
 Resource Evaluation
+
+        |
+
+        v
+
+Removal Planning
 
         |
 
@@ -2169,31 +2361,37 @@ Result Collection
 Operational Record
 ```
 
-During this workflow, requested cleanup actions are evaluated before removal operations are executed.
+During this workflow, the deprovisioning process loads the recorded provision state and resolves the resources associated with that deployment.
 
-This ensures that only intended resources are processed.
+Each removal operation is evaluated against the current Microsoft Entra ID state before the destructive operation is performed.
+
+This ensures that deprovisioning is based on previously recorded deployment information rather than an independently maintained cleanup list.
 
 ---
 
 ## 11.5 Resource Cleanup Operations
 
-The Deprovisioning layer supports cleanup operations for identity resources managed by the platform.
+The Deprovisioning layer supports controlled cleanup of identity resources recorded in the provision state.
 
-Supported operations include:
+Resources are removed in dependency-aware order:
 
 ```text
-User removal
-
-Group removal
-
-Membership cleanup
-
-Resource cleanup
+Group Memberships
+        ↓
+Groups
+        ↓
+Users
 ```
 
-Each cleanup operation follows the same controlled execution model.
+Memberships are removed first because they represent relationships between users and groups.
 
-Before removal is performed, the platform evaluates whether the target resource matches the cleanup definition.
+Groups are then removed after their memberships have been cleared.
+
+Before a destructive operation is executed, the platform evaluates the target resource against the current Microsoft Entra ID state.
+
+If a resource is already absent, the operation is treated as an idempotent cleanup outcome rather than an unexpected failure.
+
+The deprovisioning process therefore removes resources recorded in the provision state rather than using a separately maintained cleanup list.
 
 ---
 
@@ -2203,14 +2401,21 @@ Because deprovisioning operations can have a destructive impact, the platform ap
 
 Safety controls include:
 
-- Configuration-based targeting
+- Provision-state-based targeting
 - Resource evaluation before removal
 - Dry Run support
 - Execution logging
 - Result tracking
-- Controlled workflow execution
+- Dependency-aware removal order
+- Explicit protection of emergency access accounts
 
 These controls ensure that cleanup activities remain predictable and reviewable.
+
+The platform should not perform destructive operations based solely on a display name or other non-unique human-readable value.
+
+Where possible, cleanup targets should be resolved to stable Microsoft Entra ID object identifiers or uniquely identifiable configuration records before removal is performed.
+
+Emergency access accounts and other protected resources must be explicitly excluded from automated cleanup.
 
 ---
 
@@ -2223,14 +2428,18 @@ During Dry Run execution:
 ```text
 No resources are removed
 
-Planned cleanup actions are generated
+Provision state is loaded and validated
 
-Target resources are evaluated
+Recorded resources are evaluated
+
+Planned removal actions are generated
 
 Expected results are recorded
 ```
 
-Dry Run allows administrators to review intended cleanup operations before applying permanent changes.
+Dry Run must not perform destructive Microsoft Graph write operations.
+
+This allows administrators to review the intended cleanup scope before permanent changes are applied.
 
 ---
 
@@ -2283,13 +2492,14 @@ The deployment flow provides a controlled process from initial execution through
 
 Each deployment follows a predefined sequence to ensure that configuration, execution, verification and operational tracking are performed consistently.
 
-The deployment lifecycle consists of three primary execution scenarios:
+The platform supports two primary execution modes:
 
 - Standard Deployment
-- Dry Run Execution
-- End-to-End Deployment Workflow
+- Dry Run
 
-The deployment process is coordinated through the deployment orchestrator, which controls the execution order while individual components perform their dedicated responsibilities.
+The complete platform lifecycle additionally includes a separate deprovisioning workflow that can be executed after a successfully validated deployment.
+
+The deployment process is coordinated through the deployment orchestrator, while individual components perform their dedicated responsibilities.
 
 ---
 
@@ -2304,48 +2514,68 @@ The deployment follows this high-level flow:
 ```text
 Deployment Request
 
-        |
+        │
 
-        v
+        ▼
 
 Initialize Deployment Environment
 
-        |
+        │
 
-        v
+        ▼
 
-Load Configuration
+Load and Validate Configuration
 
-        |
+        │
 
-        v
+        ▼
 
-Execute Deployment Components
+Connect to Microsoft Graph
 
-        |
+        │
 
-        v
+        ▼
 
-Verify Resulting Environment
+Execute Provisioning
 
-        |
+        │
 
-        v
+        ▼
 
-Store Execution Information
+Execute Security Configuration
 
-        |
+        │
 
-        v
+        ▼
+
+Validate Resulting Environment
+
+        │
+
+        ▼
+
+Validation PASSED
+
+        │
+
+        ▼
+
+Save Provision State
+
+        │
+
+        ▼
 
 Generate Operational Output
 
-        |
+        │
 
-        v
+        ▼
 
 Deployment Completed
 ```
+
+Provision state is created only when the deployment validation has completed successfully. The resulting state records the resources associated with the validated deployment and provides the authoritative input for a later deprovisioning operation.
 
 A standard deployment ensures that every execution follows the same controlled process.
 
@@ -2363,47 +2593,49 @@ Each deployment execution is treated as an independent operational event with it
 
 ## 12.2 Dry Run
 
-Dry Run provides a simulation mode that allows deployment activities to be evaluated before applying changes to Microsoft Entra ID.
+Dry Run provides a simulation mode for both deployment and deprovisioning operations.
 
 The purpose of Dry Run is to provide visibility into the expected deployment outcome without performing actual modifications.
 
 The Dry Run process follows the same logical execution path as a standard deployment, but write operations are replaced by simulation actions.
 
-The Dry Run flow:
+Deployment Dry Run:
 
 ```text
 Deployment Request
-
-        |
-
-        v
-
+        ↓
 Load Configuration
-
-        |
-
-        v
-
+        ↓
 Evaluate Current Environment
-
-        |
-
-        v
-
+        ↓
 Calculate Planned Actions
-
-        |
-
-        v
-
+        ↓
 Generate Simulation Results
-
-        |
-
-        v
-
+        ↓
 Complete Dry Run
 ```
+
+Deprovisioning Dry Run:
+
+```text
+Provision State
+        ↓
+Load and Validate State
+        ↓
+Resolve Recorded Resources
+        ↓
+Calculate Planned Removals
+        ↓
+Generate Simulation Results
+        ↓
+Complete Dry Run
+```
+
+No Microsoft Graph write operations are performed during either Dry Run mode.
+
+Dry Run results are treated as simulation results and must be clearly distinguished from results generated by an actual deployment.
+
+Where state and reporting are generated for a Dry Run, the execution mode is recorded explicitly so that simulation results cannot be mistaken for applied changes.
 
 During Dry Run execution:
 
@@ -2419,93 +2651,80 @@ This reduces deployment risk by allowing administrators to verify expected behav
 
 ---
 
-## 12.3 End-to-End Workflow
+## 12.3 End-to-End Platform Lifecycle
 
-The complete deployment workflow represents the full operational lifecycle of the Nieuwdam Cloud Platform.
+The complete platform lifecycle connects the standard deployment and deprovisioning workflows.
 
-The workflow connects all architectural stages into one controlled process.
+A successful deployment produces a validated provision state that can later be used as the authoritative input for controlled deprovisioning.
+
+The complete lifecycle is:
 
 ```text
 Configuration Definition
-
-        |
-
-        v
-
+        │
+        ▼
 Deployment Initialization
-
-        |
-
-        v
-
-Environment Preparation
-
-        |
-
-        v
-
-Deployment Execution
-
-        |
-
-        v
-
-Environment Verification
-
-        |
-
-        v
-
-Execution State Capture
-
-        |
-
-        v
-
+        │
+        ▼
+Provisioning
+        │
+        ▼
+Security Configuration
+        │
+        ▼
+Environment Validation
+        │
+        ▼
+Validation PASSED
+        │
+        ▼
+Provision State
+        │
+        ▼
 Operational Reporting
-
-        |
-
-        v
-
-Deployment Completion
+        │
+        │
+        │  Later / On Demand
+        ▼
+Deprovisioning
+        │
+        ▼
+Remove Group Memberships
+        │
+        ▼
+Remove Groups
+        │
+        ▼
+Remove Users
+        │
+        ▼
+Deprovisioning Results
+        │
+        ▼
+Operational Reporting
 ```
-
-The deployment lifecycle begins with the definition of the desired platform state.
-
-After initialization and preparation, the deployment process executes the required automation activities.
-
-Once execution has completed, the resulting environment is evaluated to determine whether the deployed state matches the intended configuration.
-
-Operational information generated during the lifecycle is stored and transformed into usable output for administrators and future automation processes.
-
-The complete workflow ensures that every deployment follows a predictable operational pattern:
+The lifecycle can therefore be summarized as:
 
 ```text
 Define
-
-   |
-
-Prepare
-
-   |
-
-Execute
-
-   |
-
-Verify
-
-   |
-
+   ↓
+Provision
+   ↓
+Secure
+   ↓
+Validate
+   ↓
 Record
-
-   |
-
-Review
+   ↓
+Operate
+   ↓
+Deprovision
+   ↓
+Report
 ```
+The provision state forms the controlled handover point between deployment and deprovisioning.
 
-By enforcing this structured deployment lifecycle, the Nieuwdam Cloud Platform provides a reliable foundation for repeatable Microsoft Entra ID automation while maintaining operational control and visibility.
+This lifecycle ensures that resources are provisioned, validated, recorded and, when required, removed through controlled and traceable automation workflows.
 
 [⬆ Back to Table of Contents](#table-of-contents)
 

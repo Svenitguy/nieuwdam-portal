@@ -35,7 +35,11 @@ function New-ValidationReport {
 
         [Parameter()]
         [string]
-        $TenantName = "Unknown"
+        $TenantName = "Unknown",
+
+        [Parameter()]
+        [string]
+        $Version = "3.0.0"
 
     )
 
@@ -233,6 +237,12 @@ function New-ValidationReport {
                 $TenantName
             )
 
+            
+        $HtmlContent =
+            $HtmlContent.Replace(
+                "{{VERSION}}",
+                $Version
+            )
 
 
         $HtmlContent =

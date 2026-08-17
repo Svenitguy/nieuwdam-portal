@@ -547,66 +547,6 @@ $ValidationResult = [PSCustomObject]@{
 # Exit Code
 # ==================================================
 
-<#if ($Failed -gt 0) {
-
-    # Log every failed validation in detail
-
-    $FailedItems =
-        $ValidationResults |
-        Where-Object {
-            $_.Status -eq "FAIL"
-        }
-
-
-    foreach ($Failure in $FailedItems) {
-
-        Write-Logging `
-            -Message "$($Failure.Type) failed: $($Failure.Name) - $($Failure.Message)" `
-            -Level ERROR `
-            -Component "SYSTEM"
-
-    }
-
-
-    Write-Logging `
-        -Message "Validation failed with $Failed errors." `
-        -Level ERROR `
-        -Component "SYSTEM"
-
-
-    Write-RunCompleted `
-        -StartTime $ScriptStartTime `
-        -RunId $RunId `
-        -Processed $ValidationResults.Count
-
-
-    return $ValidationResult
-
-}
-
-
-else {
-
-    Write-Logging `
-        -Message "Validation completed successfully." `
-        -Level PASS `
-        -Component "SYSTEM"
-
-}
-
-
-Write-RunCompleted `
-    -StartTime $ScriptStartTime `
-    -RunId $RunId `
-    -Processed $ValidationResults.Count
-
-
-if ($PassThru) {
-
-    Write-Output $ValidationResult
-
-}#>
-
 if ($Failed -gt 0) {
 
 

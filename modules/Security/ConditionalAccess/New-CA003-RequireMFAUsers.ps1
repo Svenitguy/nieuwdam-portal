@@ -3,9 +3,8 @@
 #
 # Requires MFA for all users.
 #
-# Excludes breakglass accounts to prevent tenant lockout.
+# Excludes configured break-glass accounts.
 # ============================================================
-
 
 function New-CA003-RequireMFAUsers {
 
@@ -13,7 +12,10 @@ function New-CA003-RequireMFAUsers {
     param(
 
         [switch]
-        $DryRun
+        $DryRun,
+
+        [object]
+        $BreakGlassConfiguration
 
     )
 
@@ -22,7 +24,7 @@ function New-CA003-RequireMFAUsers {
 
         Write-Message `
             -Status "DRYRUN" `
-            -Message "Would create CA003 - Require MFA Users (excluding breakglass accounts)." `
+            -Message "Would create CA003 - Require MFA Users excluding configured break-glass accounts." `
             -Component "SECURITY"
 
         return
@@ -31,7 +33,6 @@ function New-CA003-RequireMFAUsers {
 
 
     try {
-
 
         $ExistingPolicy =
             Get-MgIdentityConditionalAccessPolicy `
@@ -42,7 +43,6 @@ function New-CA003-RequireMFAUsers {
                 "CA003 - Require MFA Users"
 
             }
-
 
 
         if($ExistingPolicy){
@@ -57,16 +57,33 @@ function New-CA003-RequireMFAUsers {
         }
 
 
-
         # --------------------------------------------------------
-        # BreakGlass exclusions
-        #
-        # These should be replaced with actual user object IDs.
-        # They can later be loaded from BreakGlassAccounts config.
+        # Break-glass exclusions
         # --------------------------------------------------------
 
-        $BreakGlassAccounts = @()
+        if(
+            $null -eq $BreakGlassConfiguration.ObjectIds -or
+            $BreakGlassConfiguration.ObjectIds.Count -eq 0
+        ){
 
+            throw `
+                "No break-glass account object IDs are available. CA003 will not be created."
+
+        }
+
+        $BreakGlassAccounts = @(
+            $BreakGlassConfiguration.ObjectIds
+        )
+
+
+        Write-Message `
+            -Status "INFO" `
+            -Message (
+                "Configuring CA003 with {0} break-glass account exclusions." `
+                -f `
+                $BreakGlassAccounts.Count
+            ) `
+            -Component "SECURITY"
 
 
         $PolicyBody = @{
@@ -75,10 +92,8 @@ function New-CA003-RequireMFAUsers {
                 "CA003 - Require MFA Users"
 
 
-
             state =
                 "enabled"
-
 
 
             conditions = @{
@@ -86,20 +101,15 @@ function New-CA003-RequireMFAUsers {
                 users = @{
 
                     includeUsers = @(
-
                         "All"
-
                     )
-
 
                     excludeUsers =
                         $BreakGlassAccounts
 
                 }
 
-
             }
-
 
 
             grantControls = @{
@@ -107,24 +117,18 @@ function New-CA003-RequireMFAUsers {
                 operator =
                     "OR"
 
-
                 builtInControls = @(
-
                     "mfa"
-
                 )
 
             }
 
-
         }
-
 
 
         New-MgIdentityConditionalAccessPolicy `
             -BodyParameter $PolicyBody `
             -ErrorAction Stop
-
 
 
         Write-Message `
@@ -136,12 +140,10 @@ function New-CA003-RequireMFAUsers {
     }
     catch {
 
-
         Write-Message `
             -Status "ERROR" `
             -Message $_.Exception.Message `
             -Component "SECURITY"
-
 
         throw
 

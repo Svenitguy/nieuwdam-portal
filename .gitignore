@@ -165,4 +165,6 @@ scripts/rollback-newdam.ps1
 # Local files
 # =========================
 
+scripts/rollback-newdam.ps1
 docs/technical-interview-questions.md
+docs/test.md

@@ -221,12 +221,12 @@ if (-not $DryRun -and -not $SkipConfirmation) {
 # Confirm live deployment
 # ==================================================
 
-if (-not $DryRun -and -not $SkipConfirmation) {
+<#if (-not $DryRun -and -not $SkipConfirmation) {
 
     Confirm-LiveDeployment `
         -Operation "Modify Microsoft Entra ID group memberships"
 
-}
+}#>
 
 # ==================================================
 # Load configuration
@@ -242,28 +242,6 @@ $MembershipConfig =
 Get-MembershipConfiguration `
     -ConfigFolder $ConfigPath
 
-# ==================================================
-# Load existing Entra ID objects
-# ==================================================
-
-<#Write-Host ""
-
-Write-Status `
-    -Status "INFO" `
-    -Message "Loading existing Entra ID objects..."
-
-$GraphCache =
-    Initialize-GraphCache
-
-$GraphUsers =
-    @(
-        $GraphCache.Users
-    )
-
-$GraphGroups =
-    @(
-        $GraphCache.Groups
-    )#>
 
 # ==================================================
 # Load existing Entra ID objects
@@ -316,6 +294,15 @@ Write-Host `
 
 
 
+$UserConfig =
+    Get-UserConfiguration `
+        -ConfigFolder $ConfigPath
+
+$GroupConfig =
+    Get-GroupConfiguration `
+        -ConfigFolder $ConfigPath
+
+
 $Results =
     @(
 
@@ -357,7 +344,7 @@ Write-ProvisioningSummary `
     -Title "Membership Provisioning Summary" `
     -Summary @{
         Added = $AddedCount
-        "Would Create" = $WouldAddCount
+        "Would Add" = $WouldAddCount
         Skipped = $SkippedCount
         Failed = $FailedCount
     }

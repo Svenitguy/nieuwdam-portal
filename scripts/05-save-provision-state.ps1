@@ -7,7 +7,7 @@
 .DESCRIPTION
     Reads the objects that currently exist in Microsoft Entra ID and
     saves them to a timestamped provision-state JSON file. 
-    This file is later used by the deprovisioning script
+    This state file is later used by the deprovisioning script
     to safely remove only provisioned objects.
 
 .NOTES
@@ -30,7 +30,11 @@ param(
     $DeploymentLogFile,
 
     [string]
-    $RunId
+    $RunId,
+
+    [Parameter()]
+    [switch]
+    $UseExistingGraphConnection
 
 )
 
@@ -154,7 +158,20 @@ try {
     # Connect Graph
     # ==================================================
 
-    Connect-EntraGraph
+    if($UseExistingGraphConnection){
+
+        Write-Message `
+            -Status PASS `
+            -Message "Using existing Microsoft Graph connection." `
+            -Component GRAPH
+
+    }
+    else {
+
+        Connect-EntraGraph `
+            -AuthenticationMode Interactive
+
+    }
 
     Write-Host ""
     Write-Host "Connected to Microsoft Graph."

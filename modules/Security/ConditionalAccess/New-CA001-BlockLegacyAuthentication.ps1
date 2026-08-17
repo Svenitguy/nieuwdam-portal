@@ -11,6 +11,10 @@ function New-CA001-BlockLegacyAuthentication {
     )
 
 
+    # ==================================================
+    # Dry Run
+    # ==================================================
+
     if($DryRun){
 
         Write-Message `
@@ -18,10 +22,23 @@ function New-CA001-BlockLegacyAuthentication {
             -Message "Would create CA001 - Block Legacy Authentication." `
             -Component "SECURITY"
 
-        return
+
+        return @{
+
+            Component = "ConditionalAccess"
+
+            Policy = "CA001 - Block Legacy Authentication"
+
+            Status = "WouldConfigure"
+
+        }
 
     }
 
+
+    # ==================================================
+    # Check existing policy
+    # ==================================================
 
     try {
 
@@ -40,10 +57,25 @@ function New-CA001-BlockLegacyAuthentication {
                 -Message "Conditional Access policy already exists: CA001 - Block Legacy Authentication." `
                 -Component "SECURITY"
 
-            return
+
+            return @{
+
+                Component = "ConditionalAccess"
+
+                Policy = "CA001 - Block Legacy Authentication"
+
+                Status = "AlreadyExists"
+
+                PolicyId = $ExistingPolicy.Id
+
+            }
 
         }
 
+
+        # ==================================================
+        # Create policy
+        # ==================================================
 
         $PolicyBody = @{
 
@@ -54,9 +86,11 @@ function New-CA001-BlockLegacyAuthentication {
             conditions = @{
 
                 users = @{
+
                     includeUsers = @(
                         "All"
                     )
+
                 }
 
                 clientAppTypes = @(
@@ -79,15 +113,29 @@ function New-CA001-BlockLegacyAuthentication {
         }
 
 
-        New-MgIdentityConditionalAccessPolicy `
-            -BodyParameter $PolicyBody `
-            -ErrorAction Stop
+        $CreatedPolicy =
+            New-MgIdentityConditionalAccessPolicy `
+                -BodyParameter $PolicyBody `
+                -ErrorAction Stop
 
 
         Write-Message `
             -Status "PASS" `
             -Message "Created CA001 - Block Legacy Authentication." `
             -Component "SECURITY"
+
+
+        return @{
+
+            Component = "ConditionalAccess"
+
+            Policy = "CA001 - Block Legacy Authentication"
+
+            Status = "Configured"
+
+            PolicyId = $CreatedPolicy.Id
+
+        }
 
 
     }
@@ -97,6 +145,7 @@ function New-CA001-BlockLegacyAuthentication {
             -Status "ERROR" `
             -Message $_.Exception.Message `
             -Component "SECURITY"
+
 
         throw
 

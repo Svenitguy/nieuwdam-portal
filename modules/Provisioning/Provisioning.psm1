@@ -494,7 +494,6 @@ function New-EntraGroups {
 
 }
 
-
 # ==================================================
 # Add-EntraGroupMembers
 # ==================================================
@@ -516,96 +515,130 @@ function Add-EntraGroupMembers {
 
     )
 
-
-    $Results =
-        [System.Collections.ArrayList]::new()
+    $Results = [System.Collections.ArrayList]::new()
 
 
     # ==================================================
-    # Lookup tables
+    # Graph user lookup
     # ==================================================
 
-    $UserLookup =
-        [System.Collections.Hashtable]::new(
-            [System.StringComparer]::OrdinalIgnoreCase
-        )
+    $UserLookup = [System.Collections.Hashtable]::new(
+        [System.StringComparer]::OrdinalIgnoreCase
+    )
 
+    foreach ($GraphUser in $GraphUsers) {
 
-    foreach($GraphUser in $GraphUsers){
+        if ($GraphUser.UserPrincipalName) {
 
-        $UserLookup[$GraphUser.UserPrincipalName] =
-            $GraphUser
+            $UserLookup[$GraphUser.UserPrincipalName] = $GraphUser
+
+        }
 
     }
 
 
-
-    $GroupLookup =
-        [System.Collections.Hashtable]::new(
-            [System.StringComparer]::OrdinalIgnoreCase
-        )
-
-
-    foreach($GraphGroup in $GraphGroups){
-
-        $GroupLookup[$GraphGroup.DisplayName] =
-            $GraphGroup
-
-    }
-
-
-
     # ==================================================
-    # Cache existing group members
+    # Graph group lookup
     # ==================================================
 
-    $GroupMembersLookup = @{}
-
-    $TotalGroups = $GraphGroups.Count
-    $CurrentGroup = 0
+    $GroupLookup = [System.Collections.Hashtable]::new(
+        [System.StringComparer]::OrdinalIgnoreCase
+    )
 
     foreach ($GraphGroup in $GraphGroups) {
 
-        $CurrentGroup++
+        if ($GraphGroup.DisplayName) {
 
-        Write-Progress `
-            -Activity "Loading existing group memberships" `
-            -Status "$CurrentGroup / $TotalGroups : Reading members of $($GraphGroup.DisplayName)" `
-            -PercentComplete (($CurrentGroup / $TotalGroups) * 100)
+            $GroupLookup[$GraphGroup.DisplayName] = $GraphGroup
 
-        $Members = Get-MgGroupMember `
-            -GroupId $GraphGroup.Id `
-            -All `
-            -Property Id
+        }
 
-        $GroupMembersLookup[$GraphGroup.Id] = @($Members.Id)
-
-    }  
-
-    Write-Progress `
-        -Activity "Loading existing group memberships" `
-        -Completed
+    }
 
 
     # ==================================================
-    # Calculate total memberships
+    # Normalize membership configuration
+    #
+    # Supported JSON:
+    #
+    # 1.
+    # {
+    #   "UserName": "user@domain.com",
+    #   "GroupName": "Group A"
+    # }
+    #
+    # 2.
+    # {
+    #   "UserName": "user@domain.com",
+    #   "Groups": [
+    #       "Group A",
+    #       "Group B"
+    #   ]
+    # }
     # ==================================================
 
-    $TotalEntries =
-        (
-            $MembershipConfig |
-            ForEach-Object {
-
-                $_.Groups.Count
-
-            } |
-            Measure-Object -Sum
-        ).Sum
+    $MembershipEntries =
+        [System.Collections.ArrayList]::new()
 
 
+    foreach ($Entry in $MembershipConfig) {
+
+        if (
+            $Entry.UserName -and
+            $Entry.GroupName
+        ) {
+
+            [void]$MembershipEntries.Add(
+                [PSCustomObject]@{
+                    UserName  = [string]$Entry.UserName
+                    GroupName = [string]$Entry.GroupName
+                }
+            )
+
+        }
+
+
+        if ($Entry.UserName -and $Entry.Groups) {
+
+            foreach ($GroupName in @($Entry.Groups)) {
+
+                if ($GroupName) {
+
+                    [void]$MembershipEntries.Add(
+                        [PSCustomObject]@{
+                            UserName  = [string]$Entry.UserName
+                            GroupName = [string]$GroupName
+                        }
+                    )
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    # ==================================================
+    # Total memberships
+    # ==================================================
+
+    $TotalEntries = $MembershipEntries.Count
+
+    if ($null -eq $TotalEntries) {
+
+        $TotalEntries = 0
+
+    }
 
     $CurrentEntry = 0
 
+
+    Write-Host ""
+    Write-Host "Starting group membership provisioning..." -ForegroundColor Cyan
+    Write-Host "Total memberships to process: $TotalEntries"
+    Write-Host ""
 
 
     Write-Logging `
@@ -614,384 +647,539 @@ function Add-EntraGroupMembers {
         -Component "PROVISIONING"
 
 
+    if ($DryRun) {
+
+        Write-Logging `
+            -Message "Membership provisioning running in DryRun mode. Objects that do not yet exist will be resolved from membership configuration." `
+            -Level "WARNING" `
+            -Component "PROVISIONING"
+
+    }
+
+
+    # ==================================================
+    # Existing Graph membership cache
+    #
+    # Only existing groups need this.
+    # ==================================================
+
+    $GroupMembersLookup = @{}
+
+    $TotalGroups = @($GraphGroups).Count
+    $CurrentGroup = 0
+
+
+    foreach ($GraphGroup in $GraphGroups) {
+
+        $CurrentGroup++
+
+        $PercentComplete = 0
+
+        if ($TotalGroups -gt 0) {
+
+            $PercentComplete =
+                ($CurrentGroup / $TotalGroups) * 100
+
+        }
+
+
+        Write-Progress `
+            -Activity "Loading existing group memberships" `
+            -Status "$CurrentGroup / $TotalGroups : $($GraphGroup.DisplayName)" `
+            -PercentComplete $PercentComplete
+
+
+        try {
+
+            $Members =
+                Get-MgGroupMember `
+                    -GroupId $GraphGroup.Id `
+                    -All `
+                    -Property Id
+
+
+            $GroupMembersLookup[$GraphGroup.Id] =
+                @(
+                    $Members |
+                    ForEach-Object {
+                        $_.Id
+                    }
+                )
+
+        }
+        catch {
+
+            Write-Logging `
+                -Message "Failed to load existing members for group '$($GraphGroup.DisplayName)': $($_.Exception.Message)" `
+                -Level "ERROR" `
+                -Component "PROVISIONING"
+
+            throw
+
+        }
+
+    }
+
+
+    Write-Progress `
+        -Activity "Loading existing group memberships" `
+        -Completed
+
 
     # ==================================================
     # Process memberships
     # ==================================================
 
-    foreach($Entry in $MembershipConfig){
+    foreach ($Entry in $MembershipEntries) {
 
+        $CurrentEntry++
 
-        foreach($GroupName in $Entry.Groups){
 
+        $MembershipName =
+            "$($Entry.UserName) -> $($Entry.GroupName)"
 
-            $CurrentEntry++
 
+        $PercentComplete = 0
 
-            $MembershipName =
-                "$($Entry.UserName) -> $GroupName"
+        if ($TotalEntries -gt 0) {
 
-
-
-            Write-Progress `
-                -Activity "Adding Group Memberships" `
-                -Status "$CurrentEntry / $TotalEntries : $MembershipName" `
-                -PercentComplete (($CurrentEntry / $TotalEntries) * 100)
-
-
-
-            Write-Host ""
-
-            Write-Host `
-                "[$CurrentEntry/$TotalEntries] $MembershipName" `
-                -ForegroundColor Cyan
-
-
-
-            Write-Logging `
-                -Message "[$CurrentEntry/$TotalEntries] Processing membership: $MembershipName" `
-                -Level "INFO" `
-                -Component "PROVISIONING"
-
-
-            # ==================================================
-            # Validate group
-            # ==================================================
-
-            $Group =
-                $GroupLookup[$GroupName]
-
-
-
-            if(-not $Group){
-
-
-                Write-Host `
-                    "       FAILED - Group not found" `
-                    -ForegroundColor Red
-
-
-
-                Write-Logging `
-                    -Message "FAILED - Group not found: $GroupName" `
-                    -Level "ERROR" `
-                    -Component "PROVISIONING"
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "Failed"
-
-                        Message = "Group not found"
-
-                    }
-                )
-
-
-                continue
-
-            }#>
-
-            # ==================================================
-            # Resolve objects
-            # ==================================================
-
-            $User =
-                 $UserLookup[$Entry.UserName]
-
-
-            $Group =
-                $GroupLookup[$GroupName]
-
-
-
-            # ==================================================
-            # DryRun handling
-            # ==================================================
-
-            if($DryRun){
-
-
-                Write-Host `
-                    "       WOULD ADD" `
-                    -ForegroundColor Magenta
-
-
-
-                Write-Logging `
-                    -Message "WOULD ADD MEMBER - $MembershipName" `
-                    -Level "DRYRUN" `
-                    -Component "PROVISIONING"
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "WouldAdd"
-
-                        Message = "DryRun - Membership would be created"
-
-                    }
-                )
-
-
-                continue
-
-            }
-
-
-
-            # ==================================================
-            # Validate objects (real run only)
-            # ==================================================
-
-            if(-not $User){
-
-
-                Write-Host `
-                    "       FAILED - User not found" `
-                    -ForegroundColor Red
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "Failed"
-
-                        Message = "User not found"
-
-                    }
-                )
-
-
-                continue
-
-            }
-
-
-
-            if(-not $Group){
-
-
-                Write-Host `
-                    "       FAILED - Group not found" `
-                    -ForegroundColor Red
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "Failed"
-
-                        Message = "Group not found"
-
-                    }
-                )
-
-
-                continue
-
-            }
-
-
-
-            # ==================================================
-            # Already member
-            # ==================================================
-
-            if(
-                $GroupMembersLookup[$Group.Id] -contains $User.Id
-            ){
-
-
-                Write-Host `
-                    "       SKIPPED - Already member" `
-                    -ForegroundColor Yellow
-
-
-
-                Write-Logging `
-                    -Message "Membership already exists: $MembershipName (already member)" `
-                    -Level "SKIPPED" `
-                    -Component "PROVISIONING"
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "Skipped"
-
-                        Message = "Already member"
-
-                    }
-                )
-
-
-                continue
-
-            }
-
-
-            # ==================================================
-            # Add membership
-            # ==================================================
-
-            try{
-
-
-                $null =
-                    New-MgGroupMemberByRef `
-                        -GroupId $Group.Id `
-                        -BodyParameter @{
-                            
-                            "@odata.id" =
-                            "https://graph.microsoft.com/v1.0/directoryObjects/$($User.Id)"
-
-                        }
-
-
-
-                Write-Host `
-                    "       ADDED" `
-                    -ForegroundColor Green
-
-
-
-                Write-Logging `
-                    -Message "ADDED MEMBER - $MembershipName" `
-                    -Level "PASS" `
-                    -Component "PROVISIONING"
-
-
-
-                $GroupMembersLookup[$Group.Id] +=
-                    $User.Id
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp         = Get-Date
-                        Type              = "Membership"
-                        Name              = $MembershipName
-                        UserId            = $User.Id
-                        UserPrincipalName = $User.UserPrincipalName
-                        GroupId           = $Group.Id
-                        GroupName         = $Group.DisplayName
-                        Action            = "Added"
-                        Message           = "Member added successfully"
-
-                    }
-                )
-
-
-            }
-            catch{
-
-
-                Write-Host `
-                    "       FAILED" `
-                    -ForegroundColor Red
-
-
-
-                Write-Logging `
-                    -Message "FAILED ADD MEMBER - $MembershipName - $($_.Exception.Message)" `
-                    -Level "ERROR" `
-                    -Component "PROVISIONING"
-
-
-
-                [void]$Results.Add(
-                    [PSCustomObject]@{
-
-                        Timestamp = Get-Date
-
-                        Type = "Membership"
-
-                        Name = $MembershipName
-
-                        Action = "Failed"
-
-                        Message = $_.Exception.Message
-
-                    }
-                )
-
-
-            }
-
+            $PercentComplete =
+                ($CurrentEntry / $TotalEntries) * 100
 
         }
 
 
-    }
+        Write-Progress `
+            -Activity "Processing Group Memberships" `
+            -Status "$CurrentEntry / $TotalEntries : $MembershipName" `
+            -PercentComplete $PercentComplete
 
+
+        Write-Host ""
+
+        Write-Host `
+            "[$CurrentEntry/$TotalEntries] $MembershipName" `
+            -ForegroundColor Cyan
+
+
+        Write-Logging `
+            -Message "[$CurrentEntry/$TotalEntries] Processing membership: $MembershipName" `
+            -Level "INFO" `
+            -Component "PROVISIONING"
+
+
+        # ==================================================
+        # Resolve from Graph
+        # ==================================================
+
+        $User =
+            $UserLookup[$Entry.UserName]
+
+        $Group =
+            $GroupLookup[$Entry.GroupName]
+
+
+        # ==================================================
+        # DRY RUN
+        #
+        # User/group may NOT exist yet because scripts 01
+        # and 02 were also run with -DryRun.
+        #
+        # Therefore we use the membership configuration
+        # itself as proof that the objects are intended
+        # to exist.
+        # ==================================================
+
+        if ($DryRun) {
+
+            # --------------------------------------------------
+            # User
+            #
+            # If Graph has it -> real existing user.
+            #
+            # If Graph does not have it -> configuration says
+            # this user is part of the requested membership.
+            # --------------------------------------------------
+
+            if (-not $User) {
+
+                $ConfiguredUser =
+                    $MembershipEntries |
+                    Where-Object {
+                        $_.UserName -ieq $Entry.UserName
+                    } |
+                    Select-Object -First 1
+
+                if (-not $ConfiguredUser) {
+
+                    Write-Host `
+                        "       FAILED - User not found" `
+                        -ForegroundColor Red
+
+
+                    Write-Logging `
+                        -Message "FAILED - User not found in Graph or membership configuration: $($Entry.UserName)" `
+                        -Level "ERROR" `
+                        -Component "PROVISIONING"
+
+
+                    [void]$Results.Add(
+                        [PSCustomObject]@{
+                            Timestamp = Get-Date
+                            Type      = "Membership"
+                            Name      = $MembershipName
+                            Action    = "Failed"
+                            Message   = "User not found in Graph or membership configuration"
+                        }
+                    )
+
+                    continue
+
+                }
+
+            }
+
+
+            # --------------------------------------------------
+            # Group
+            #
+            # Same principle.
+            # --------------------------------------------------
+
+            if (-not $Group) {
+
+                $ConfiguredGroup =
+                    $MembershipEntries |
+                    Where-Object {
+                        $_.GroupName -ieq $Entry.GroupName
+                    } |
+                    Select-Object -First 1
+
+                if (-not $ConfiguredGroup) {
+
+                    Write-Host `
+                        "       FAILED - Group not found" `
+                        -ForegroundColor Red
+
+
+                    Write-Logging `
+                        -Message "FAILED - Group not found in Graph or membership configuration: $($Entry.GroupName)" `
+                        -Level "ERROR" `
+                        -Component "PROVISIONING"
+
+
+                    [void]$Results.Add(
+                        [PSCustomObject]@{
+                            Timestamp = Get-Date
+                            Type      = "Membership"
+                            Name      = $MembershipName
+                            Action    = "Failed"
+                            Message   = "Group not found in Graph or membership configuration"
+                        }
+                    )
+
+                    continue
+
+                }
+
+            }
+
+
+            # --------------------------------------------------
+            # Existing membership
+            #
+            # Only check this when BOTH objects already exist
+            # in Graph.
+            # --------------------------------------------------
+
+            if ($User -and $Group) {
+
+                $ExistingMembers =
+                    @(
+                        $GroupMembersLookup[$Group.Id]
+                    )
+
+
+                if (
+                    $ExistingMembers -contains $User.Id
+                ) {
+
+                    Write-Host `
+                        "       SKIPPED - Already member" `
+                        -ForegroundColor Yellow
+
+
+                    Write-Logging `
+                        -Message "Membership already exists: $MembershipName" `
+                        -Level "SKIPPED" `
+                        -Component "PROVISIONING"
+
+
+                    [void]$Results.Add(
+                        [PSCustomObject]@{
+                            Timestamp         = Get-Date
+                            Type              = "Membership"
+                            Name              = $MembershipName
+                            UserId            = $User.Id
+                            UserPrincipalName = $User.UserPrincipalName
+                            GroupId           = $Group.Id
+                            GroupName         = $Group.DisplayName
+                            Action            = "Skipped"
+                            Message           = "Already member"
+                        }
+                    )
+
+                    continue
+
+                }
+
+            }
+
+
+            # --------------------------------------------------
+            # WOULD ADD
+            # --------------------------------------------------
+
+            Write-Host `
+                "       WOULD ADD" `
+                -ForegroundColor Magenta
+
+
+            Write-Logging `
+                -Message "WOULD ADD MEMBER - $MembershipName" `
+                -Level "DRYRUN" `
+                -Component "PROVISIONING"
+
+
+            $DryRunUserId = $null
+
+            if ($User) {
+
+                $DryRunUserId = $User.Id
+
+            }
+
+
+            $DryRunGroupId = $null
+
+            if ($Group) {
+
+                $DryRunGroupId = $Group.Id
+
+            }
+
+
+            [void]$Results.Add(
+                [PSCustomObject]@{
+                    Timestamp         = Get-Date
+                    Type              = "Membership"
+                    Name              = $MembershipName
+                    UserId            = $DryRunUserId
+                    UserPrincipalName = $Entry.UserName
+                    GroupId           = $DryRunGroupId
+                    GroupName         = $Entry.GroupName
+                    Action            = "WouldAdd"
+                    Message           = "DryRun - Membership would be created"
+                }
+            )
+
+
+            continue
+
+        }
+
+
+        # ==================================================
+        # LIVE RUN
+        #
+        # In a real run both objects MUST exist in Graph.
+        # ==================================================
+
+        if (-not $User) {
+
+            Write-Host `
+                "       FAILED - User not found" `
+                -ForegroundColor Red
+
+
+            Write-Logging `
+                -Message "FAILED - User not found: $($Entry.UserName)" `
+                -Level "ERROR" `
+                -Component "PROVISIONING"
+
+
+            [void]$Results.Add(
+                [PSCustomObject]@{
+                    Timestamp = Get-Date
+                    Type      = "Membership"
+                    Name      = $MembershipName
+                    Action    = "Failed"
+                    Message   = "User not found"
+                }
+            )
+
+
+            continue
+
+        }
+
+
+        if (-not $Group) {
+
+            Write-Host `
+                "       FAILED - Group not found" `
+                -ForegroundColor Red
+
+
+            Write-Logging `
+                -Message "FAILED - Group not found: $($Entry.GroupName)" `
+                -Level "ERROR" `
+                -Component "PROVISIONING"
+
+
+            [void]$Results.Add(
+                [PSCustomObject]@{
+                    Timestamp = Get-Date
+                    Type      = "Membership"
+                    Name      = $MembershipName
+                    Action    = "Failed"
+                    Message   = "Group not found"
+                }
+            )
+
+
+            continue
+
+        }
+
+
+        # ==================================================
+        # Existing membership
+        # ==================================================
+
+        $ExistingMembers =
+            @(
+                $GroupMembersLookup[$Group.Id]
+            )
+
+
+        if (
+            $ExistingMembers -contains $User.Id
+        ) {
+
+            Write-Host `
+                "       SKIPPED - Already member" `
+                -ForegroundColor Yellow
+
+
+            [void]$Results.Add(
+                [PSCustomObject]@{
+                    Timestamp         = Get-Date
+                    Type              = "Membership"
+                    Name              = $MembershipName
+                    UserId            = $User.Id
+                    UserPrincipalName = $User.UserPrincipalName
+                    GroupId           = $Group.Id
+                    GroupName         = $Group.DisplayName
+                    Action            = "Skipped"
+                    Message           = "Already member"
+                }
+            )
+
+
+            continue
+
+        }
+
+
+        # ==================================================
+        # Add membership
+        # ==================================================
+
+        try {
+
+            $null =
+                New-MgGroupMemberByRef `
+                    -GroupId $Group.Id `
+                    -BodyParameter @{
+                        "@odata.id" =
+                            "https://graph.microsoft.com/v1.0/directoryObjects/$($User.Id)"
+                    }
+
+
+            Write-Host `
+                "       ADDED" `
+                -ForegroundColor Green
+
+
+            Write-Logging `
+                -Message "ADDED MEMBER - $MembershipName" `
+                -Level "PASS" `
+                -Component "PROVISIONING"
+
+
+            if (
+                -not $GroupMembersLookup.ContainsKey($Group.Id)
+            ) {
+
+                $GroupMembersLookup[$Group.Id] = @()
+
+            }
+
+
+            $GroupMembersLookup[$Group.Id] +=
+                $User.Id
+
+
+            [void]$Results.Add(
+                [PSCustomObject]@{
+                    Timestamp         = Get-Date
+                    Type              = "Membership"
+                    Name              = $MembershipName
+                    UserId            = $User.Id
+                    UserPrincipalName = $User.UserPrincipalName
+                    GroupId           = $Group.Id
+                    GroupName         = $Group.DisplayName
+                    Action            = "Added"
+                    Message           = "Member added successfully"
+                }
+            )
+
+        }
+        catch {
+
+            Write-Host `
+                "       FAILED - $($_.Exception.Message)" `
+                -ForegroundColor Red
+
+
+            Write-Logging `
+                -Message "FAILED ADD MEMBER - $MembershipName - $($_.Exception.Message)" `
+                -Level "ERROR" `
+                -Component "PROVISIONING"
+
+
+            [void]$Results.Add(
+                [PSCustomObject]@{
+                    Timestamp = Get-Date
+                    Type      = "Membership"
+                    Name      = $MembershipName
+                    Action    = "Failed"
+                    Message   = $_.Exception.Message
+                }
+            )
+
+        }
+
+    }
 
 
     Write-Progress `
-        -Activity "Adding Group Memberships" `
+        -Activity "Processing Group Memberships" `
         -Completed
 
 
-
     return @($Results)
-
-}
-
-function Get-ProvisionState {
-
-    param(
-        [string]$StateFile
-    )
-
-
-    if(!(Test-Path $StateFile)){
-
-        throw "Provision state file not found: $StateFile"
-
-    }
-
-
-    return Get-Content `
-        -Path $StateFile `
-        -Raw |
-        ConvertFrom-Json
 
 }
 

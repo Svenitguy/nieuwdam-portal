@@ -152,6 +152,10 @@ function Set-PasswordPolicy {
     )
 
 
+    # ==================================================
+    # Dry Run
+    # ==================================================
+
     if($DryRun){
 
         Write-Message `
@@ -161,6 +165,7 @@ function Set-PasswordPolicy {
                 -f $Configuration.MinimumLength
             ) `
             -Component "SECURITY"
+
 
         return @{
 
@@ -179,44 +184,41 @@ function Set-PasswordPolicy {
     }
 
 
-    Write-Message `
-        -Status "INFO" `
-        -Message "Configuring password policies." `
-        -Component "SECURITY"
-
-
-    # Microsoft Graph implementation will be added here
+    # ==================================================
+    # Graph implementation not yet available
+    # ==================================================
 
     Write-Message `
-        -Status "INFO" `
-        -Message (
-            "Password policy configuration loaded. MinimumLength: {0}" `
-            -f $Configuration.MinimumLength
-        ) `
+        -Status "WARNING" `
+        -Message "Password policy configuration is not implemented yet. Configuration was loaded, but no Microsoft Graph changes were applied." `
         -Component "SECURITY"
 
-
-    Write-Message `
-        -Status "PASS" `
-        -Message "Password policies configured." `
-        -Component "SECURITY"
 
     return @{
 
         Component = "PasswordPolicy"
-        Status = "Configured"
-        MinimumLength = $Configuration.MinimumLength
-        RequireComplexity = $Configuration.RequireComplexity
+
+        Status = "NotImplemented"
+
+        MinimumLength =
+            $Configuration.MinimumLength
+
+        RequireComplexity =
+            $Configuration.RequireComplexity
 
     }
-}
 
+}
 
 
 # ============================================================
 # Set-AuthenticationMethods
 #
 # Configures allowed authentication methods.
+#
+# Current implementation:
+# - Dry Run evaluation
+# - Configuration validation
 #
 # Future implementation:
 # - Authenticator App
@@ -238,6 +240,10 @@ function Set-AuthenticationMethods {
     )
 
 
+    # ==================================================
+    # Dry Run
+    # ==================================================
+
     if($DryRun){
 
         Write-Message `
@@ -249,6 +255,7 @@ function Set-AuthenticationMethods {
                 $Configuration.FIDO2
             ) `
             -Component "SECURITY"
+
 
         return @{
 
@@ -267,19 +274,14 @@ function Set-AuthenticationMethods {
     }
 
 
-    Write-Message `
-        -Status "INFO" `
-        -Message "Configuring authentication methods." `
-        -Component "SECURITY"
-
-
-    # Microsoft Graph implementation will be added here
-
+    # ==================================================
+    # Graph implementation not yet available
+    # ==================================================
 
     Write-Message `
-        -Status "INFO" `
+        -Status "WARNING" `
         -Message (
-            "Authentication methods loaded. AuthenticatorApp: {0}, FIDO2: {1}" `
+            "Authentication method configuration is not implemented yet. Configuration was loaded, but no Microsoft Graph changes were applied. AuthenticatorApp: {0}, FIDO2: {1}" `
             -f `
             $Configuration.AuthenticatorApp,
             $Configuration.FIDO2
@@ -287,17 +289,20 @@ function Set-AuthenticationMethods {
         -Component "SECURITY"
 
 
-    Write-Message `
-        -Status "PASS" `
-        -Message "Authentication methods configured." `
-        -Component "SECURITY"
-
     return @{
+
         Component = "AuthenticationMethods"
-        Status = "Configured"
-        AuthenticatorApp = $Configuration.AuthenticatorApp
-        FIDO2 = $Configuration.FIDO2
+
+        Status = "NotImplemented"
+
+        AuthenticatorApp =
+            $Configuration.AuthenticatorApp
+
+        FIDO2 =
+            $Configuration.FIDO2
+
     }
+
 }
 
 
@@ -306,15 +311,15 @@ function Set-AuthenticationMethods {
 #
 # Configures Multi-Factor Authentication requirements.
 #
+# Current implementation:
+# - Dry Run evaluation
+# - Configuration validation
+#
 # Future implementation:
 # - MFA registration policy
 # - Authentication strength
 # - User targeting
 # ============================================================
-
-# ------------------------------------------------------------
-# Configure Multi-Factor Authentication
-# ------------------------------------------------------------
 
 function Set-MFAConfiguration {
 
@@ -330,6 +335,10 @@ function Set-MFAConfiguration {
     )
 
 
+    # ==================================================
+    # Dry Run
+    # ==================================================
+
     if($DryRun){
 
         Write-Message `
@@ -337,7 +346,7 @@ function Set-MFAConfiguration {
             -Message (
                 "Would configure MFA requirements. Enabled: {0}, Admins: {1}, Users: {2}" `
                 -f `
-             $Configuration.Enabled,
+                $Configuration.Enabled,
                 $Configuration.RequireForAdmins,
                 $Configuration.RequireForUsers
             ) `
@@ -347,55 +356,352 @@ function Set-MFAConfiguration {
         return @{
 
             Component = "MFA"
+
             Status = "WouldConfigure"
-            Enabled = $Configuration.Enabled
-            RequireForAdmins = $Configuration.RequireForAdmins
-            RequireForUsers = $Configuration.RequireForUsers
+
+            Enabled =
+                $Configuration.Enabled
+
+            RequireForAdmins =
+                $Configuration.RequireForAdmins
+
+            RequireForUsers =
+                $Configuration.RequireForUsers
 
         }
 
     }
 
 
+    # ==================================================
+    # Graph implementation not yet available
+    # ==================================================
 
     Write-Message `
-        -Status "INFO" `
-        -Message "Configuring MFA requirements." `
+        -Status "WARNING" `
+        -Message (
+            "MFA configuration is not implemented yet. Configuration was loaded, but no Microsoft Graph changes were applied. Enabled: {0}, Admins: {1}, Users: {2}" `
+            -f `
+            $Configuration.Enabled,
+            $Configuration.RequireForAdmins,
+            $Configuration.RequireForUsers
+        ) `
         -Component "SECURITY"
-
-
-
-    #
-    # Microsoft Graph implementation will be added here
-    #
-    # Example future actions:
-    #
-    # - Configure Authentication Strength
-    # - Require Microsoft Authenticator
-    # - Enable FIDO2 security keys
-    # - Create Conditional Access requirement
-    #
-
-
-
-    Write-Message `
-        -Status "PASS" `
-        -Message "MFA configuration completed." `
-        -Component "SECURITY"
-
 
 
     return @{
 
         Component = "MFA"
 
-        Status = "Configured"
+        Status = "NotImplemented"
+
+        Enabled =
+            $Configuration.Enabled
+
+        RequireForAdmins =
+            $Configuration.RequireForAdmins
+
+        RequireForUsers =
+            $Configuration.RequireForUsers
+
+    }
+
+}
+
+# ============================================================
+# New-BreakGlassAccounts
+#
+# Validates configured break-glass accounts.
+#
+# Break-glass accounts are defined in security.json.
+# Missing accounts are reported but not automatically created.
+# ============================================================
+
+function New-BreakGlassAccounts {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [object]
+        $Configuration,
+
+        [switch]
+        $DryRun,
+
+        [switch]
+        $CreateMissing
+
+    )
+
+
+    # ==================================================
+    # Validate configuration
+    # ==================================================
+
+    if(
+        $null -eq $Configuration.Accounts -or
+        $Configuration.Accounts.Count -eq 0
+    ){
+
+        throw "No break-glass accounts are configured in security.json."
 
     }
 
 
-}
+    if(
+        $Configuration.RequiredCount -lt 1
+    ){
 
+        throw "Break-glass RequiredCount must be at least 1."
+
+    }
+
+
+    Write-Message `
+        -Status "INFO" `
+        -Message (
+            "Checking break-glass accounts. Required: {0}" -f
+            $Configuration.RequiredCount
+        ) `
+        -Component "SECURITY"
+
+
+    $Results = @()
+
+
+    # ==================================================
+    # Check configured accounts
+    # ==================================================
+
+    foreach($Account in $Configuration.Accounts){
+
+        try {
+
+            $User =
+                Get-MgUser `
+                    -UserId $Account `
+                    -Property `
+                        Id,
+                        DisplayName,
+                        UserPrincipalName,
+                        AccountEnabled `
+                    -ErrorAction Stop
+
+
+            $Results += [PSCustomObject]@{
+
+                UserPrincipalName =
+                    $User.UserPrincipalName
+
+                ObjectId =
+                    $User.Id
+
+                Exists =
+                    $true
+
+                AccountEnabled =
+                    $User.AccountEnabled
+
+                Status =
+                    "Found"
+
+            }
+
+
+            Write-Message `
+                -Status "PASS" `
+                -Message (
+                    "Break-glass account found: {0}" -f
+                    $User.UserPrincipalName
+                ) `
+                -Component "SECURITY"
+
+        }
+        catch {
+
+            Write-Message `
+                -Status "WARNING" `
+                -Message (
+                    "Break-glass account missing: {0}" -f
+                    $Account
+                ) `
+                -Component "SECURITY"
+
+
+            # ==================================================
+            # DryRun
+            # ==================================================
+
+            if($DryRun){
+
+                $Results += [PSCustomObject]@{
+
+                    UserPrincipalName =
+                        $Account
+
+                    ObjectId =
+                        $null
+
+                    Exists =
+                        $false
+
+                    AccountEnabled =
+                        $false
+
+                    Status =
+                        "WouldCreate"
+
+                }
+
+                continue
+
+            }
+
+
+            # ==================================================
+            # Create missing account
+            # ==================================================
+
+            if($CreateMissing){
+
+                Write-Message `
+                    -Status "INFO" `
+                    -Message (
+                        "Creating break-glass account: {0}" -f
+                        $Account
+                    ) `
+                    -Component "SECURITY"
+
+
+                throw (
+                    "Break-glass account creation requires a secure password " +
+                    "workflow. Do not create the account until that workflow " +
+                    "has been configured."
+                )
+
+            }
+
+
+            $Results += [PSCustomObject]@{
+
+                UserPrincipalName =
+                    $Account
+
+                ObjectId =
+                    $null
+
+                Exists =
+                    $false
+
+                AccountEnabled =
+                    $false
+
+                Status =
+                    "Missing"
+
+            }
+
+        }
+
+    }
+
+
+    # ==================================================
+    # Summary
+    # ==================================================
+
+    $FoundAccounts = @(
+        $Results |
+        Where-Object {
+            $_.Exists
+        }
+    )
+
+
+    $MissingAccounts = @(
+        $Results |
+        Where-Object {
+            -not $_.Exists
+        }
+    )
+
+
+    if($DryRun){
+
+        Write-Message `
+            -Status "DRYRUN" `
+            -Message (
+                "Break-glass validation completed. Found: {0}, Missing: {1}" -f
+                $FoundAccounts.Count,
+                $MissingAccounts.Count
+            ) `
+            -Component "SECURITY"
+
+    }
+    elseif($MissingAccounts.Count -eq 0){
+
+        Write-Message `
+            -Status "PASS" `
+            -Message (
+                "All configured break-glass accounts exist. Count: {0}" -f
+                $FoundAccounts.Count
+            ) `
+            -Component "SECURITY"
+
+    }
+    else {
+
+        Write-Message `
+            -Status "WARNING" `
+            -Message (
+                "Break-glass accounts missing. Found: {0}, Missing: {1}" -f
+                $FoundAccounts.Count,
+                $MissingAccounts.Count
+            ) `
+            -Component "SECURITY"
+
+    }
+
+
+    return [PSCustomObject]@{
+
+        Component =
+            "BreakGlassAccounts"
+
+        RequiredCount =
+            $Configuration.RequiredCount
+
+        FoundCount =
+            $FoundAccounts.Count
+
+        MissingCount =
+            $MissingAccounts.Count
+
+        Accounts =
+            $Results
+
+        ObjectIds = @(
+            $FoundAccounts |
+            ForEach-Object {
+                $_.ObjectId
+            }
+        )
+
+        Status =
+            if($MissingAccounts.Count -eq 0){
+                "Compliant"
+            }
+            elseif($DryRun){
+                "WouldCreate"
+            }
+            else{
+                "Missing"
+            }
+
+    }
+
+}
 
 # ============================================================
 # New-ConditionalAccessPolicies
@@ -412,10 +718,6 @@ function Set-MFAConfiguration {
 # Configure Conditional Access Policies
 # ------------------------------------------------------------
 
-# ------------------------------------------------------------
-# Configure Conditional Access Policies
-# ------------------------------------------------------------
-
 function New-ConditionalAccessPolicies {
 
     [CmdletBinding()]
@@ -425,7 +727,10 @@ function New-ConditionalAccessPolicies {
         $DryRun,
 
         [object]
-        $Configuration
+        $Configuration,
+
+        [object]
+        $BreakGlassConfiguration
 
     )
 
@@ -536,8 +841,8 @@ function New-ConditionalAccessPolicies {
                 "RequireMFAUsers" {
 
                     New-CA003-RequireMFAUsers `
-                        -DryRun:$DryRun
-
+                        -DryRun:$DryRun `
+                        -BreakGlassConfiguration $BreakGlassConfiguration
 
                 }
 
@@ -1027,5 +1332,6 @@ Export-ModuleMember -Function @(
     "New-ConditionalAccessPolicies",
     "Test-SecurityDefaults",
     "Test-BreakGlassAccounts",
-    "New-SecurityReport"
+    "New-SecurityReport",
+    "New-BreakGlassAccounts"
 )

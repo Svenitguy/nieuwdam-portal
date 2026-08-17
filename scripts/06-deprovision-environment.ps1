@@ -242,6 +242,30 @@ if($null -eq $ProvisionState){
 
 }
 
+# ==================================================
+# Validate framework version
+# ==================================================
+
+if(
+    $null -eq $ProvisionState.FrameworkVersion
+){
+
+    Write-Logging `
+        -Message "State file does not contain framework version information." `
+        -Level WARNING `
+        -Component SYSTEM
+
+}
+elseif(
+    $ProvisionState.FrameworkVersion -ne "3.0.0"
+){
+
+    Write-Logging `
+        -Message "State file created by different framework version: $($ProvisionState.FrameworkVersion)" `
+        -Level WARNING `
+        -Component SYSTEM
+
+}
 
 # ==================================================
 # Validate state file
@@ -339,21 +363,56 @@ $GraphCache =
 $UserLookup =
     @{}
 
+
 foreach($User in $GraphCache.Users){
 
-    $UserLookup[$User.UserPrincipalName] =
-        $User
+    if(
+        ![string]::IsNullOrWhiteSpace(
+            $User.UserPrincipalName
+        )
+    ){
+
+        $UserLookup[$User.UserPrincipalName] =
+            $User
+
+    }
+    else {
+
+        Write-Logging `
+            -Message "User without UserPrincipalName detected in Graph cache. Object skipped." `
+            -Level WARNING `
+            -Component GRAPH
+
+    }
 
 }
+
 
 
 $GroupLookup =
     @{}
 
+
 foreach($Group in $GraphCache.Groups){
 
-    $GroupLookup[$Group.DisplayName] =
-        $Group
+    if(
+        ![string]::IsNullOrWhiteSpace(
+            $Group.DisplayName
+        )
+    ){
+
+        $GroupLookup[$Group.DisplayName] =
+            $Group
+
+    }
+    else {
+
+        Write-Logging `
+            -Message "Group without DisplayName detected in Graph cache. Object skipped." `
+            -Level WARNING `
+            -Component GRAPH
+
+    }
 
 }
 

@@ -5,48 +5,43 @@
 Deploys a complete Microsoft Entra ID environment.
 
 .DESCRIPTION
-    Main deployment orchestrator for the Entra ID Provisioning Framework.
+Main deployment orchestrator for the Entra ID Provisioning Framework.
 
-    Executes provisioning steps:
+Executes deployment steps:
 
-    1. Connect Microsoft Graph
-    2. Provision users
-    3. Provision groups
-    4. Configure group memberships
-    5. Validate environment
+1. Provision users
+2. Provision groups
+3. Configure group memberships
+4. Validate environment
+5. Save provision state
+6. Configure security baseline
 
-
-    Supports DryRun mode to simulate changes
-    without modifying the tenant.
-
+Supports DryRun mode to simulate changes
+without modifying the tenant.
 
 .PARAMETER DryRun
 Runs the deployment in simulation mode.
 No users, groups or memberships will be created.
 
+.EXAMPLE
+.\deploy-environment.ps1
+
+Runs a complete deployment.
 
 .EXAMPLE
-    .\deploy-environment.ps1
+.\deploy-environment.ps1 -DryRun
 
-    Runs a complete deployment.
-
-
-.EXAMPLE
-    .\deploy-environment.ps1 -DryRun
-
-    Simulates deployment without making changes.
-
+Simulates deployment without modifying the tenant.
 
 .NOTES
+Project :
+    Entra ID Provisioning Framework
 
-    Project :
-        Entra ID Provisioning Framework
+Script :
+    Deploy Environment
 
-    Script :
-        Deploy Environment
-
-    Version :
-        3.0.0
+Version :
+    Loaded from config/platform.config.psd1
 #>
 
 # ==================================================
@@ -54,13 +49,11 @@ No users, groups or memberships will be created.
 # ==================================================
 
 [CmdletBinding()]
-
 param(
 
-
-[Parameter()]
-[switch]
-$DryRun
+    [Parameter()]
+    [switch]
+    $DryRun
 
 )
 
@@ -73,24 +66,26 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ==================================================
-# Variables
+# Paths
 # ==================================================
 
-$DeploymentStart = Get-Date
-
-$ScriptVersion = "3.0.0"
-
-$ScriptRoot = $PSScriptRoot
+$ScriptRoot =
+    $PSScriptRoot
 
 $ModuleRoot =
-Join-Path `
-    (Split-Path $ScriptRoot -Parent) `
-    "modules"
+    Join-Path `
+        (Split-Path $ScriptRoot -Parent) `
+        "modules"
 
-$LogFolder = Join-Path `
-    $ScriptRoot `
-    "..\logs"
+$ConfigFolder =
+    Join-Path `
+        $ScriptRoot `
+        "..\config"
 
+$LogFolder =
+    Join-Path `
+        $ScriptRoot `
+        "..\logs"
 
 # ==================================================
 # Import modules
@@ -110,188 +105,281 @@ $RequiredModules = @(
 
 )
 
-
 foreach($Module in $RequiredModules){
 
-
     if(!(Test-Path $Module)){
-
 
         throw `
             "Required PowerShell module file not found: $Module"
 
-
     }
-
 
     Import-Module `
         $Module `
         -Force
 
-
 }
-
 
 # ==================================================
 # Initialize Run Tracking
 # ==================================================
 
-$RunId = [guid]::NewGuid().ToString()
+$RunId =
+    [guid]::NewGuid().ToString()
 
-$ScriptStartTime = Get-Date
+$DeploymentStart =
+    Get-Date
+
+$ScriptStartTime =
+    Get-Date
+
+# ==================================================
+# Deployment Step Header
+# ==================================================
+
+function Write-DeploymentStepHeader {
+
+    param(
+
+        [Parameter(Mandatory)]
+        [int]$Step,
+
+        [Parameter(Mandatory)]
+        [int]$Total,
+
+        [Parameter(Mandatory)]
+        [string]$Title
+
+    )
+
+    Write-Host ""
+
+    Write-Host "================================================" `
+        -ForegroundColor Cyan
+
+    Write-Host "STEP $Step/$Total - $Title" `
+        -ForegroundColor Cyan
+
+    Write-Host "================================================" `
+        -ForegroundColor Cyan
+
+}
+
+# ==================================================
+# Main Execution
+# ==================================================
 
 try {
 
+    # ==================================================
+    # Initialize Logging
+    # ==================================================
+
+    Initialize-Logging `
+        -LogFolder $LogFolder `
+        -LogName "deployment"
+
+    $DeploymentLogFile =
+        Get-CurrentLogFile
+
+    Write-DeploymentLog `
+        -Message "Deployment started. RunId: $RunId" `
+        -Level INFO `
+        -Component "SYSTEM"
+
+    # ==================================================
+    # Load Platform Configuration
+    # ==================================================
+
+    $PlatformConfig =
+        Get-PlatformConfig `
+            -ConfigFolder $ConfigFolder
+
+    $FrameworkName =
+        $PlatformConfig.FrameworkName
+
+    $FrameworkVersion =
+        $PlatformConfig.FrameworkVersion
+
+    # ==================================================
+    # Validate Platform Configuration
+    # ==================================================
+
+    if([string]::IsNullOrWhiteSpace($FrameworkName)){
+
+        throw "FrameworkName is missing from platform.config.psd1"
+
+    }
+
+    if([string]::IsNullOrWhiteSpace($FrameworkVersion)){
+
+        throw "FrameworkVersion is missing from platform.config.psd1"
+
+    }
+
+    # ==================================================
+    # Deployment Header
+    # ==================================================
+
+    Write-Host ""
+
+    Write-Host "==============================================" `
+        -ForegroundColor Cyan
+
+    Write-Host " $FrameworkName" `
+        -ForegroundColor Cyan
+
+    Write-Host "==============================================" `
+        -ForegroundColor Cyan
+
+    Write-Host ""
+
+    Write-Host "Version : $FrameworkVersion"
+
+    Write-Host "Mode    : $(if($DryRun){'DRY-RUN'}else{'DEPLOYMENT'})"
+
+    Write-Host "Started : $(Get-Date -Format 'dd/MM/yyyy HH\:mm\:ss')"
+
+    Write-Host ""
+
+    Write-DeploymentLog `
+        -Message (
+            "Framework: {0}. Version: {1}. Mode: {2}" `
+            -f `
+            $FrameworkName,
+            $FrameworkVersion,
+            $(if($DryRun){"DRY-RUN"}else{"DEPLOYMENT"})
+        ) `
+        -Level INFO `
+        -Component "SYSTEM"
+
+    # ==================================================
+    # Deployment workflow
+    # ==================================================
+
+    $DeploymentSteps = @(
+        "Provisioning users"
+        "Provisioning groups"
+        "Configuring group memberships"
+        "Validating environment"
+        "Saving provision state"
+        "Configuring security baseline"
+    )
+
+    $TotalSteps =
+        $DeploymentSteps.Count
+
+    $CurrentStep = 1
+
+    # ==================================================
+    # Required Scripts
+    # ==================================================
+
+    Write-DeploymentLog `
+        -Message "Checking required scripts..." `
+        -Level INFO `
+        -Component "SYSTEM"
+
+    $RequiredScripts = @(
+
+        "01-provision-users.ps1"
+        "02-provision-groups.ps1"
+        "03-provision-group-memberships.ps1"
+        "04-validate-environment.ps1"
+        "05-save-provision-state.ps1"
+        "07-configure-security.ps1"
+
+    )
+
+    foreach($Script in $RequiredScripts) {
+
+        $ScriptPath =
+            Join-Path `
+                $ScriptRoot `
+                $Script
+
+        if(!(Test-Path $ScriptPath)) {
+
+            throw `
+                "Required script missing: $Script"
+
+        }
+
+    }
+
+    Write-DeploymentLog `
+        -Message "All required scripts found." `
+        -Level PASS `
+        -Component "SYSTEM"
+
+    # ==================================================
+    # Deployment Steps
+    # ==================================================
+
+    Write-Host ""
+
+    Write-Status `
+        -Status "INFO" `
+        -Message "Starting deployment workflow..."
+
+    # ==================================================
+    # Connect Microsoft Graph
+    # ==================================================
+
+    Write-Host ""
+
+    Write-Host "Connecting to Microsoft Graph" `
+        -ForegroundColor Cyan
+
+    Write-DeploymentLog `
+        -Message "Connecting to Microsoft Graph." `
+        -Level INFO `
+        -Component "SYSTEM"
+
+    Connect-EntraGraph
+
+    Write-DeploymentLog `
+        -Message "Microsoft Graph connection established." `
+        -Level PASS `
+        -Component "SYSTEM"
+
+    # ==================================================
+    # Confirm live deployment
+    # ==================================================
+
+    if (-not $DryRun) {
+
+        Confirm-LiveDeployment `
+            -Operation @(
+                "Create Microsoft Entra ID users"
+                "Create Microsoft Entra ID groups"
+                "Configure Microsoft Entra ID group memberships"
+                "Validate Microsoft Entra ID environment"
+                "Save provisioning state"
+                "Configure Microsoft Entra ID security baseline"
+            )
+
+    }
+
+
 # ==================================================
-# Initialize Logging
+# Step - Provision Users
 # ==================================================
 
-Initialize-Logging `
-    -LogFolder $LogFolder `
-    -LogName "deployment"
-
-$DeploymentLogFile = Get-CurrentLogFile
+Write-DeploymentStepHeader `
+    -Step $CurrentStep `
+    -Total $TotalSteps `
+    -Title $DeploymentSteps[$CurrentStep - 1]
 
 Write-DeploymentLog `
-    -Message "Deployment started. RunId: $RunId" `
-    -Level INFO `
-    -Component "SYSTEM"
-
-# ==================================================
-# Deployment Header
-# ==================================================
-
-Write-Host ""
-
-Write-Host "==============================================" `
--ForegroundColor Cyan
-
-Write-Host " Entra ID Provisioning Framework" `
--ForegroundColor Cyan
-
-Write-Host "==============================================" `
--ForegroundColor Cyan
-
-Write-Host ""
-
-Write-Host "Version : $ScriptVersion"
-
-Write-Host "Mode    : $(if($DryRun){'DRY-RUN'}else{'DEPLOYMENT'})"
-
-Write-Host "Started : $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')"
-
-Write-Host ""
-
-# ==================================================
-# Required Scripts
-# ==================================================
-
-Write-DeploymentLog `
-    -Message "Checking required scripts..." `
-    -Level INFO `
-    -Component "SYSTEM"
-
-$RequiredScripts = @(
-
-    "01-provision-users.ps1",
-    "02-provision-groups.ps1",
-    "03-provision-group-memberships.ps1",
-    "04-validate-environment.ps1",
-    "05-save-provision-state.ps1"
-
-)
-
-foreach($Script in $RequiredScripts) {
-
-
-$ScriptPath =
-    Join-Path `
-        $ScriptRoot `
-        $Script
-
-
-if(!(Test-Path $ScriptPath)) {
-
-
-    throw `
-        "Required script missing: $Script"
-
-
-}
-
-
-}
-
-Write-DeploymentLog `
-    -Message "All required scripts found." `
-    -Level PASS `
-    -Component "SYSTEM"
-
-# ==================================================
-# Deployment Steps
-# ==================================================
-
-Write-Host ""
-
-Write-Status `
-    -Status "INFO" `
-    -Message "Starting deployment workflow..."
-
-# ==================================================
-# Connect Microsoft Graph
-# ==================================================
-
-Write-Host ""
-
-Write-Host "Connecting to Microsoft Graph" `
--ForegroundColor Cyan
-
-Write-DeploymentLog `
-    -Message "Connecting to Microsoft Graph." `
-    -Level INFO
-
-Connect-EntraGraph
-
-Write-DeploymentLog `
-    -Message "Microsoft Graph connection established." `
-    -Level PASS `
-    -Component "SYSTEM"
-
-# ==================================================
-# Confirm live deployment
-# ==================================================
-
-if (-not $DryRun) {
-
-    Confirm-LiveDeployment `
-        -Operation @(
-            "Create Microsoft Entra ID users"
-            "Create Microsoft Entra ID groups"
-            "Configure Microsoft Entra ID group memberships"
-            "Validate Microsoft Entra ID environment"
-            "Save provisioning state"
-        )
-
-}
-
-# ==================================================
-# Step 1/4 - Provision Users
-# ==================================================
-
-Write-Host ""
-
-Write-Host "STEP 1/4 - Provisioning users" `
--ForegroundColor Cyan
-
-Write-DeploymentLog `
-    -Message "STEP 1/4 - Provisioning users started." `
+    -Message "STEP $CurrentStep/$TotalSteps - User provisioning started." `
     -Level INFO `
     -Component "SYSTEM"
 
 if($DryRun) {
 
     Write-DeploymentLog `
-        -Message "STEP 1/4 - Running user provisioning in DRY-RUN mode." `
+        -Message "STEP $CurrentStep/$TotalSteps - Running user provisioning in DRY-RUN mode." `
         -Level INFO `
         -Component "SYSTEM"
 
@@ -332,28 +420,34 @@ Write-DeploymentLog `
     -Component "SYSTEM"
 
 Write-DeploymentLog `
-    -Message "STEP 1/4 - User provisioning completed." `
+    -Message "STEP $CurrentStep/$TotalSteps - User provisioning completed." `
     -Level PASS `
     -Component "SYSTEM"
 
-# ==================================================
-# Step 2/4 - Provision Groups
-# ==================================================
-
 Write-Host ""
+Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - User provisioning completed." `
+    -ForegroundColor Green
 
-Write-Host "STEP 2/4 - Provisioning groups" `
--ForegroundColor Cyan
+$CurrentStep++
+
+# ==================================================
+# Step - Provision Groups
+# ==================================================
+
+Write-DeploymentStepHeader `
+    -Step $CurrentStep `
+    -Total $TotalSteps `
+    -Title $DeploymentSteps[$CurrentStep - 1]
 
 Write-DeploymentLog `
-    -Message "STEP 2/4 - Provisioning groups started." `
+    -Message "STEP $CurrentStep/$TotalSteps - Provisioning groups started." `
     -Level INFO `
     -Component "SYSTEM"
 
 if($DryRun) {
 
     Write-DeploymentLog `
-        -Message "STEP 2/4 - Running group provisioning in DRY-RUN mode." `
+        -Message "STEP $CurrentStep/$TotalSteps - Running group provisioning in DRY-RUN mode." `
         -Level INFO `
         -Component "SYSTEM"
 
@@ -365,7 +459,6 @@ if($DryRun) {
         -PassThru `
         -UseExistingGraphConnection `
         -SkipConfirmation
-
 
 }
 else {
@@ -395,28 +488,34 @@ Write-DeploymentLog `
     -Component "SYSTEM"
 
 Write-DeploymentLog `
-    -Message "STEP 2/4 - Group provisioning completed." `
+    -Message "STEP $CurrentStep/$TotalSteps - Group provisioning completed." `
     -Level PASS `
     -Component "SYSTEM"
 
-# ==================================================
-# Step 3/4 - Configure Memberships
-# ==================================================
-
 Write-Host ""
+Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Group provisioning completed." `
+    -ForegroundColor Green
 
-Write-Host "STEP 3/4 - Configuring group memberships" `
--ForegroundColor Cyan
+$CurrentStep++
+
+# ==================================================
+# Step - Configure Memberships
+# ==================================================
+
+Write-DeploymentStepHeader `
+    -Step $CurrentStep `
+    -Total $TotalSteps `
+    -Title $DeploymentSteps[$CurrentStep - 1]
 
 Write-DeploymentLog `
-    -Message "STEP 3/4 - Group membership configuration started." `
+    -Message "STEP $CurrentStep/$TotalSteps - Group membership configuration started." `
     -Level INFO `
     -Component "SYSTEM"
 
 if($DryRun) {
 
     Write-DeploymentLog `
-        -Message "STEP 3/4 - Running membership configuration in DRY-RUN mode." `
+        -Message "STEP $CurrentStep/$TotalSteps - Running membership configuration in DRY-RUN mode." `
         -Level INFO `
         -Component "SYSTEM"
 
@@ -428,7 +527,6 @@ if($DryRun) {
         -PassThru `
         -UseExistingGraphConnection `
         -SkipConfirmation
-
 
 }
 else {
@@ -456,94 +554,64 @@ Write-DeploymentLog `
     -Component "SYSTEM"
 
 Write-DeploymentLog `
-    -Message "STEP 3/4 - Group membership configuration completed." `
+    -Message "STEP $CurrentStep/$TotalSteps - Group membership configuration completed." `
     -Level PASS `
     -Component "SYSTEM"
-
-# ==================================================
-# Step 4/4 - Validation
-# ==================================================
 
 Write-Host ""
+Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Group membership configuration completed." `
+    -ForegroundColor Green
 
-Write-Host "STEP 4/4 - Validating environment" `
--ForegroundColor Cyan
+$CurrentStep++
+
+# ==================================================
+# Step - Validation
+# ==================================================
+
+Write-DeploymentStepHeader `
+    -Step $CurrentStep `
+    -Total $TotalSteps `
+    -Title $DeploymentSteps[$CurrentStep - 1]
 
 Write-DeploymentLog `
-    -Message "STEP 4/4 - Validation started." `
+    -Message "STEP $CurrentStep/$TotalSteps - Validation started." `
     -Level INFO `
     -Component "SYSTEM"
-
-<#$ValidationResult =
-& "$ScriptRoot\04-validate-environment.ps1" `
-    -DeploymentLogFile $DeploymentLogFile `
-    -RunId $RunId `
-    -PassThru#>
-
-<#$ValidationResult =
-& "$ScriptRoot\04-validate-environment.ps1" `
-    -DeploymentLogFile $DeploymentLogFile `
-    -RunId $RunId `
-    -PassThru
-
-
-if($ValidationResult.Failed -gt 0){
-
-    throw "Deployment stopped. Validation failed with $($ValidationResult.Failed) errors."
-
-}
-
-Write-DeploymentLog `
-    -Message (
-        "Validation summary: TotalChecks: {0}, Passed: {1}, Failed: {2}" `
-        -f `
-        $ValidationResult.TotalChecks,
-        $ValidationResult.Passed,
-        $ValidationResult.Failed
-    ) `
-    -Level INFO `
-    -Component "SYSTEM"
-
-Write-DeploymentLog `
-    -Message "STEP 4/4 - Validation completed." `
-    -Level PASS `
-    -Component "SYSTEM"#>
 
 if($DryRun) {
 
-
     Write-Host ""
-
     Write-Host "DRY-RUN MODE - Validation skipped" `
         -ForegroundColor Yellow
 
-
     Write-DeploymentLog `
-        -Message "STEP 4/4 - Validation skipped because deployment is running in DRY-RUN mode." `
+        -Message "STEP $CurrentStep/$TotalSteps - Validation skipped because deployment is running in DRY-RUN mode." `
         -Level INFO `
         -Component "SYSTEM"
 
+    Write-DeploymentLog `
+        -Message "STEP $CurrentStep/$TotalSteps - Validation simulation completed." `
+        -Level PASS `
+        -Component "SYSTEM"
 
+    Write-Host ""
+    Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Validation skipped in DRY-RUN mode." `
+        -ForegroundColor Green
 }
 else {
 
-
     $ValidationResult =
-    & "$ScriptRoot\04-validate-environment.ps1" `
-        -DeploymentLogFile $DeploymentLogFile `
-        -RunId $RunId `
-        -PassThru `
-        -UseExistingGraphConnection
-
-
+        & "$ScriptRoot\04-validate-environment.ps1" `
+            -DeploymentLogFile $DeploymentLogFile `
+            -RunId $RunId `
+            -PassThru `
+            -UseExistingGraphConnection
 
     if($ValidationResult.Failed -gt 0){
 
         throw "Deployment stopped. Validation failed with $($ValidationResult.Failed) errors."
 
     }
-
-
 
     Write-DeploymentLog `
         -Message (
@@ -556,97 +624,60 @@ else {
         -Level INFO `
         -Component "SYSTEM"
 
-
-
     Write-DeploymentLog `
-        -Message "STEP 4/4 - Validation completed." `
+        -Message "STEP $CurrentStep/$TotalSteps - Validation completed." `
         -Level PASS `
         -Component "SYSTEM"
 
-
+    Write-Host ""
+    Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Validation completed." `
+        -ForegroundColor Green
 }
 
+$CurrentStep++
+
 # ==================================================
-# Step 5/5 - Save Provision State
+# Step - Save Provision State
 # ==================================================
 
-<#Write-Host ""
-
-Write-Host "STEP 5/5 - Saving provision state" `
--ForegroundColor Cyan
-
+Write-DeploymentStepHeader `
+    -Step $CurrentStep `
+    -Total $TotalSteps `
+    -Title $DeploymentSteps[$CurrentStep - 1]
 
 Write-DeploymentLog `
-    -Message "STEP 5/5 - Save provision state started." `
+    -Message "STEP $CurrentStep/$TotalSteps - Save provision state started." `
     -Level INFO `
     -Component "SYSTEM"
-
-
-$StateResult =
-& "$ScriptRoot\05-save-provision-state.ps1" `
-    -DeploymentLogFile $DeploymentLogFile `
-    -RunId $RunId
-
-
-Write-DeploymentLog `
-    -Message (
-        "Provision state saved. File: {0}. Users: {1}, Groups: {2}, Memberships: {3}" `
-        -f `
-        $StateResult.StateFile,
-        $StateResult.Users,
-        $StateResult.Groups,
-        $StateResult.Memberships
-    ) `
-    -Level PASS `
-    -Component "SYSTEM"
-
-
-Write-DeploymentLog `
-    -Message "STEP 5/5 - Save provision state completed." `
-    -Level PASS `
-    -Component "SYSTEM"#>
-
-# ==================================================
-# Step 5/5 - Save Provision State
-# ==================================================
-
-Write-Host ""
-
-Write-Host "Step 5/5 - Save Provision State (Skipped during DryRun)" `
--ForegroundColor Cyan
-
 
 if($DryRun) {
 
     Write-Host ""
-    
+
     Write-Host "DRY-RUN MODE - Provision state not saved" `
         -ForegroundColor Yellow
 
-
     Write-DeploymentLog `
-        -Message "STEP 5/5 - Save provision state skipped because deployment is running in DRY-RUN mode." `
+        -Message "STEP $CurrentStep/$TotalSteps - Save provision state skipped because deployment is running in DRY-RUN mode." `
         -Level INFO `
         -Component "SYSTEM"
 
+    Write-DeploymentLog `
+        -Message "STEP $CurrentStep/$TotalSteps - Save provision state simulation completed." `
+        -Level PASS `
+        -Component "SYSTEM"
+
+    Write-Host ""
+    Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Provision state skipped in DRY-RUN mode." `
+        -ForegroundColor Green
 
 }
 else {
 
-
-    Write-DeploymentLog `
-        -Message "STEP 5/5 - Save provision state started." `
-        -Level INFO `
-        -Component "SYSTEM"
-
-
-
     $StateResult =
-    & "$ScriptRoot\05-save-provision-state.ps1" `
-        -DeploymentLogFile $DeploymentLogFile `
-        -RunId $RunId
-
-
+        & "$ScriptRoot\05-save-provision-state.ps1" `
+            -DeploymentLogFile $DeploymentLogFile `
+            -RunId $RunId
 
     Write-DeploymentLog `
         -Message (
@@ -660,14 +691,77 @@ else {
         -Level PASS `
         -Component "SYSTEM"
 
-
-
     Write-DeploymentLog `
-        -Message "STEP 5/5 - Save provision state completed." `
+        -Message "STEP $CurrentStep/$TotalSteps - Save provision state completed." `
         -Level PASS `
         -Component "SYSTEM"
 
+    Write-Host ""
+    Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Provision state saved." `
+        -ForegroundColor Green
+
 }
+
+$CurrentStep++
+
+# ==================================================
+# Step - Configure Security Baseline
+# ==================================================
+
+Write-DeploymentStepHeader `
+    -Step $CurrentStep `
+    -Total $TotalSteps `
+    -Title $DeploymentSteps[$CurrentStep - 1]
+
+Write-DeploymentLog `
+    -Message "STEP $CurrentStep/$TotalSteps - Security configuration started." `
+    -Level INFO `
+    -Component "SYSTEM"
+
+if($DryRun){
+
+    Write-DeploymentLog `
+        -Message "STEP $CurrentStep/$TotalSteps - Running security configuration in DRY-RUN mode." `
+        -Level INFO `
+        -Component "SYSTEM"
+
+    $SecurityResult =
+        & "$ScriptRoot\07-configure-security.ps1" `
+            -DryRun `
+            -DeploymentLogFile $DeploymentLogFile `
+            -RunId $RunId `
+            -UseExistingGraphConnection
+
+    Write-DeploymentLog `
+        -Message "STEP $CurrentStep/$TotalSteps - Security configuration simulation completed." `
+        -Level PASS `
+        -Component "SECURITY"
+
+    Write-Host ""
+    Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Security configuration simulation completed." `
+        -ForegroundColor Green
+
+}
+else {
+
+    $SecurityResult =
+        & "$ScriptRoot\07-configure-security.ps1" `
+            -DeploymentLogFile $DeploymentLogFile `
+            -RunId $RunId `
+            -UseExistingGraphConnection
+
+    Write-DeploymentLog `
+        -Message "STEP $CurrentStep/$TotalSteps - Security configuration completed." `
+        -Level PASS `
+        -Component "SECURITY"
+
+    Write-Host ""
+    Write-Host "[PASS] STEP $CurrentStep/$TotalSteps - Security configuration completed." `
+        -ForegroundColor Green
+
+}
+
+$CurrentStep++
 
 # ==================================================
 # Deployment Completed
@@ -741,13 +835,27 @@ catch {
 
     Write-Host ""
 
-    Write-DeploymentLog `
-        -Message $_.Exception.Message `
-        -Level ERROR `
-        -Component "SYSTEM"
-
     Write-Host $_.Exception.Message `
         -ForegroundColor Red
+
+    if(Get-Command Write-DeploymentLog -ErrorAction SilentlyContinue){
+
+        try {
+
+            Write-DeploymentLog `
+                -Message $_.Exception.Message `
+                -Level ERROR `
+                -Component "SYSTEM"
+
+        }
+        catch {
+
+            Write-Host "Unable to write deployment error to log." `
+                -ForegroundColor Yellow
+
+        }
+
+    }
 
     exit 1
 

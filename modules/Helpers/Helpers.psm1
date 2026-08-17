@@ -81,31 +81,78 @@ function Write-ProvisioningSummary {
         "==============================================" `
         -ForegroundColor Cyan
 
-
-
-    foreach ($Item in @(
+    <#$DisplayOrder = @(
         "Created",
-        "Skipped",
+        "Added",
         "Would Create",
+        "Would Add",
+        "Skipped",
         "Failed"
-    )) {
+    )
 
-        $Value = 0
+    foreach ($Item in $DisplayOrder) {
 
         if ($Summary.ContainsKey($Item)) {
 
-            $Value = $Summary[$Item]
+            Write-Host (
+                "{0,-14}: {1}" -f
+                $Item,
+                $Summary[$Item]
+            )
 
         }
 
-        Write-Host (
-            "{0,-14}: {1}" -f
-            $Item,
-            $Value
-        )
+    }#>
+
+    $DisplayOrder = @(
+        "Created",
+        "Added",
+        "Would Create",
+        "Would Add",
+        "Skipped",
+        "Failed"
+
+    )
+
+
+    $Displayed = $false
+
+
+    foreach ($Item in $DisplayOrder) {
+
+        if ($Summary.ContainsKey($Item)) {
+
+            Write-Host (
+                "{0,-20}: {1}" -f
+                $Item,
+                $Summary[$Item]
+            )
+
+            $Displayed = $true
+
+        }
 
     }
+
+
+    if(-not $Displayed){
+
+        foreach($Item in $Summary.Keys){
+
+            Write-Host (
+                "{0,-20}: {1}" -f
+                $Item,
+                $Summary[$Item]
+            )
+
+        }
+
+    }
+
 }
+
+
+
 
 # ==================================================
 # Confirm-LiveDeployment
