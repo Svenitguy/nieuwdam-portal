@@ -186,7 +186,7 @@ The tenant overview provides the baseline environment before automation executio
 
 The following screenshot demonstrates the initial Microsoft Entra ID tenant baseline before deployment execution.
 
-<img src="screenshots/01-entra-overview-initial.png" alt="Microsoft Entra Tenant Overview" width="100%">
+<img src="screenshots/01-entra-overview-initial.PNG" alt="Microsoft Entra Tenant Overview" width="100%">
 
 ---
 
@@ -206,7 +206,7 @@ New identity objects are provisioned through the automation framework. Existing 
 
 The following screenshot demonstrates the initial Microsoft Entra ID user state before automated provisioning.
 
-<img src="screenshots/02-entra-users-initial.png" alt="Initial Microsoft Entra ID User State" width="100%">
+<img src="screenshots/02-entra-users-initial.PNG" alt="Initial Microsoft Entra ID User State" width="100%">
 
 ---
 
@@ -301,7 +301,7 @@ A successful authentication allows the automation framework to perform identity 
 
 The following screenshot demonstrates successful Microsoft Graph connection validation and tenant context availability.
 
-<img src="screenshots/03-graph-authentication.png" alt="Microsoft Graph Authentication" width="100%">
+<img src="screenshots/03-graph-authentication.PNG" alt="Microsoft Graph Authentication" width="100%">
 
 ---
 
@@ -362,9 +362,9 @@ The following screenshots demonstrate the individual provisioning stages execute
 
 The following screenshots demonstrate the Dry Run execution of user provisioning. The framework loads the configured user definitions and calculates the planned user creation actions.
 
-<img src="screenshots/04-user-provisioning-dryrun-start.png" alt="User Provisioning Dry Run Start" width="70%">
+<img src="screenshots/04-user-provisioning-dryrun-start.PNG" alt="User Provisioning Dry Run Start" width="70%">
 
-<img src="screenshots/05-user-provisioning-dryrun-summary.png" alt="User Provisioning Dry Run Summary" width="70%">
+<img src="screenshots/05-user-provisioning-dryrun-summary.PNG" alt="User Provisioning Dry Run Summary" width="70%">
 
 ---
 
@@ -372,9 +372,9 @@ The following screenshots demonstrate the Dry Run execution of user provisioning
 
 The following screenshots demonstrate the Dry Run execution of group provisioning. The framework evaluates the configured security groups and calculates the planned group creation actions.
 
-<img src="screenshots/06-group-provisioning-dryrun-start.png" alt="Group Provisioning Dry Run Start" width="70%">
+<img src="screenshots/06-group-provisioning-dryrun-start.PNG" alt="Group Provisioning Dry Run Start" width="70%">
 
-<img src="screenshots/07-group-provisioning-dryrun-summary.png" alt="Group Provisioning Dry Run Summary" width="70%">
+<img src="screenshots/07-group-provisioning-dryrun-summary.PNG" alt="Group Provisioning Dry Run Summary" width="70%">
 
 ---
 
@@ -382,9 +382,9 @@ The following screenshots demonstrate the Dry Run execution of group provisionin
 
 The following screenshots demonstrate the Dry Run execution of group membership provisioning. The framework evaluates the configured membership assignments and calculates the planned membership changes.
 
-![Group Membership Provisioning Dry Run Start](screenshots/08-group-membership-provisioning-dryrun-start.png)
+![Group Membership Provisioning Dry Run Start](screenshots/08-group-membership-provisioning-dryrun-start.PNG)
 
-![Group Membership Provisioning Dry Run Summary](screenshots/09-group-membership-provisioning-dryrun-summary.png)
+![Group Membership Provisioning Dry Run Summary](screenshots/09-group-membership-provisioning-dryrun-summary.PNG)
 
 ---
 
@@ -396,7 +396,7 @@ During Dry Run execution, provisioning actions are evaluated without applying ch
 
 The security baseline is executed in Dry Run mode so that planned security operations can be evaluated without modifying the tenant.
 
-![Deployment Completion](screenshots/10-deployment-completed.png)
+![Deployment Completion](screenshots/10-deployment-completed.PNG)
 
 ---
 
@@ -427,7 +427,7 @@ Before applying changes, the deployment requires explicit operator confirmation.
 
 The following screenshot demonstrates the deployment confirmation step before changes are applied to Microsoft Entra ID.
 
-![Deployment Confirmation](screenshots/11-deployment-confirmation.png)
+![Deployment Confirmation](screenshots/11-deployment-confirmation.PNG)
 
 ---
 
@@ -439,11 +439,11 @@ The user provisioning stage validates the configured user definitions, checks fo
 
 The following screenshot demonstrates the start of the live user provisioning stage.
 
-![User Provisioning Live Run Start](screenshots/12-user-provisioning-live-start.png)
+![User Provisioning Live Run Start](screenshots/12-user-provisioning-live-start.PNG)
 
 The following screenshot demonstrates the completed user provisioning stage and the resulting provisioning actions.
 
-![User Provisioning Live Run Summary](screenshots/13-user-provisioning-live-summary.png)
+![User Provisioning Live Run Summary](screenshots/13-user-provisioning-live-summary.PNG)
 
 ---
 
@@ -455,11 +455,11 @@ Existing groups are detected before creation to prevent unnecessary duplication.
 
 The following screenshot demonstrates the start of the live group provisioning stage.
 
-![Group Provisioning Live Start](screenshots/14-group-provisioning-live-start.png)
+![Group Provisioning Live Start](screenshots/14-group-provisioning-live-start.PNG)
 
 The following screenshot demonstrates the completed group provisioning stage.
 
-![Group Provisioning Live Summary](screenshots/15-group-provisioning-live-summary.png)
+![Group Provisioning Live Summary](screenshots/15-group-provisioning-live-summary.PNG)
 
 ---
 
@@ -471,11 +471,11 @@ The membership provisioning component resolves the required users and groups and
 
 The following screenshot demonstrates the start of the live group membership provisioning stage.
 
-![Group Membership Provisioning Live Start](screenshots/16-group-membership-live-start.png)
+![Group Membership Provisioning Live Start](screenshots/16-group-membership-live-start.PNG)
 
 The following screenshot demonstrates the completed group membership provisioning stage.
 
-![Group Membership Provisioning Live Summary](screenshots/17-group-membership-live-summary.png)
+![Group Membership Provisioning Live Summary](screenshots/17-group-membership-live-summary.PNG)
 
 ---
 
@@ -494,7 +494,7 @@ The validation process uses read-only Microsoft Entra ID operations and does not
 
 The following screenshot demonstrates the live validation stage executed after provisioning.
 
-![Validation Live](screenshots/18-validation-live.png)
+![Validation Live](screenshots/18-validation-live.PNG)
 
 ---
 
@@ -512,7 +512,7 @@ Provision state is not created during Dry Run execution because no resources are
 
 The following screenshot demonstrates the successful provision state persistence stage.
 
-![Provision State Saved](screenshots/19-provision-state-saved.png)
+![Provision State Saved](screenshots/19-provision-state-saved.PNG)
 
 Generated reports include:
 
@@ -572,7 +572,7 @@ The security configuration component generates a security report containing the 
 
 The following screenshot demonstrates the live security baseline configuration stage.
 
-![Security Baseline Live](screenshots/20-security-baseline-live.png)
+![Security Baseline Live](screenshots/20-security-baseline-live.PNG)
 
 The security configuration component is designed as an independent component of the deployment architecture and can be extended with additional security controls as the platform evolves.
 
@@ -653,7 +653,7 @@ The dashboard loads the generated validation JSON output and provides a user-fri
 
 The following screenshot demonstrates the interactive validation dashboard.
 
-![Validation Dashboard](screenshots/22-validation-dashboard.png)
+![Validation Dashboard](screenshots/22-validation-dashboard.PNG)
 
 ---
 
